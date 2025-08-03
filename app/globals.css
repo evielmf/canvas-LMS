@@ -3,46 +3,161 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Calm, natural color palette */
+  --sage-50: 248, 250, 248;
+  --sage-100: 240, 244, 240;
+  --sage-200: 226, 235, 227;
+  --sage-300: 197, 218, 200;
+  --sage-400: 154, 192, 159;
+  --sage-500: 107, 161, 115;
+  --sage-600: 76, 130, 86;
+  --sage-700: 58, 104, 68;
+  
+  --lavender-50: 250, 249, 253;
+  --lavender-100: 243, 240, 249;
+  --lavender-200: 231, 224, 243;
+  --lavender-300: 206, 193, 231;
+  --lavender-400: 171, 152, 212;
+  --lavender-500: 139, 115, 191;
+  
+  --cream-50: 254, 252, 248;
+  --cream-100: 251, 246, 237;
+  --cream-200: 246, 235, 217;
+  --cream-300: 237, 218, 188;
+  
+  --soft-blue-50: 248, 251, 255;
+  --soft-blue-100: 238, 246, 254;
+  --soft-blue-200: 220, 237, 252;
+  --soft-blue-300: 186, 217, 247;
+  --soft-blue-400: 124, 185, 238;
+  --soft-blue-500: 76, 158, 226;
+  
+  --warm-gray-50: 250, 250, 249;
+  --warm-gray-100: 245, 245, 244;
+  --warm-gray-200: 231, 229, 228;
+  --warm-gray-300: 214, 211, 209;
+  --warm-gray-400: 168, 162, 158;
+  --warm-gray-500: 120, 113, 108;
+  --warm-gray-600: 87, 83, 78;
+  --warm-gray-700: 68, 64, 60;
+  --warm-gray-800: 41, 37, 36;
+  --warm-gray-900: 28, 25, 23;
+  
+  /* Calm gradients */
+  --gradient-calm: linear-gradient(135deg, rgb(var(--cream-50)) 0%, rgb(var(--lavender-50)) 50%, rgb(var(--soft-blue-50)) 100%);
+  --gradient-sage: linear-gradient(135deg, rgb(var(--sage-50)) 0%, rgb(var(--cream-50)) 100%);
+  --gradient-soft: linear-gradient(135deg, rgb(var(--soft-blue-50)) 0%, rgb(var(--lavender-50)) 100%);
+  
+  /* Text colors */
+  --text-primary: var(--warm-gray-800);
+  --text-secondary: var(--warm-gray-600);
+  --text-muted: var(--warm-gray-500);
+  
+  /* shadcn/ui CSS variables */
+  --background: 254 252 248;
+  --foreground: 41 37 36;
+  --card: 255 255 255;
+  --card-foreground: 41 37 36;
+  --popover: 255 255 255;
+  --popover-foreground: 41 37 36;
+  --primary: 76 130 86;
+  --primary-foreground: 255 255 255;
+  --secondary: 240 244 240;
+  --secondary-foreground: 58 104 68;
+  --muted: 240 244 240;
+  --muted-foreground: 120 113 108;
+  --accent: 240 244 240;
+  --accent-foreground: 58 104 68;
+  --destructive: 220 38 38;
+  --destructive-foreground: 255 255 255;
+  --border: 226 235 227;
+  --input: 226 235 227;
+  --ring: 154 192 159;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--gradient-calm);
+  color: rgb(var(--text-primary));
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  min-height: 100vh;
 }
 
-/* Custom scrollbar */
+/* Calming scrollbar design */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgb(var(--cream-50));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+  background: rgb(var(--sage-300));
+  border-radius: 4px;
+  border: 2px solid rgb(var(--cream-50));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: rgb(var(--sage-400));
+}
+
+/* Calm focus states */
+:focus {
+  outline: 2px solid rgb(var(--sage-400));
+  outline-offset: 2px;
+}
+
+/* Gentle transitions */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, 
+              opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Study café vibes - soft shadows */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(var(--warm-gray-500), 0.08), 
+              0 1px 4px rgba(var(--warm-gray-500), 0.04);
+}
+
+.card-shadow-hover:hover {
+  box-shadow: 0 4px 16px rgba(var(--warm-gray-500), 0.12), 
+              0 2px 8px rgba(var(--warm-gray-500), 0.08);
+}
+
+/* Calm input styles */
+input, textarea, select {
+  background: rgb(var(--cream-50));
+  border: 1px solid rgb(var(--warm-gray-200));
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgb(var(--text-primary));
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgb(var(--sage-400));
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--sage-400), 0.1);
 }

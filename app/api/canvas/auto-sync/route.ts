@@ -197,7 +197,10 @@ export async function POST(request: NextRequest) {
       try {
         await supabase
           .from('canvas_tokens')
-          .update({ updated_at: new Date().toISOString() })
+          .update({ 
+            last_sync: new Date().toISOString(),
+            updated_at: new Date().toISOString() 
+          })
           .eq('user_id', user.id)
       } catch (error) {
         console.warn('Could not update last sync time:', error)

@@ -6,8 +6,8 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Canvas LMS Student Dashboard',
-  description: 'A modern student dashboard for Canvas LMS integration',
+  title: 'Easeboard - Your Peaceful Study Companion',
+  description: 'A calming, student-friendly Canvas dashboard designed to reduce stress and promote mindful learning',
 }
 
 export default function RootLayout({
@@ -25,8 +25,23 @@ export default function RootLayout({
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#363636',
+                background: 'rgb(76, 130, 86)',
                 color: '#fff',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                boxShadow: '0 4px 16px rgba(87, 83, 78, 0.12), 0 2px 8px rgba(87, 83, 78, 0.08)',
+              },
+              success: {
+                style: {
+                  background: 'rgb(107, 161, 115)',
+                },
+              },
+              error: {
+                style: {
+                  background: 'rgb(220, 38, 38)',
+                },
               },
             }}
           />

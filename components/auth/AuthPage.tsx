@@ -59,40 +59,59 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex justify-center items-center space-x-2 mb-4">
-            <GraduationCap className="w-8 h-8 text-canvas-blue" />
-            <h1 className="text-3xl font-bold text-gray-900">Canvas Dashboard</h1>
+    <div className="min-h-screen bg-gradient-calm flex items-center justify-center p-6">
+      <div className="max-w-lg w-full">
+        {/* Welcome section with calming design */}
+        <div className="text-center mb-10">
+          <div className="flex justify-center items-center space-x-3 mb-6">
+            <div className="p-3 bg-white rounded-2xl shadow-soft">
+              <GraduationCap className="w-8 h-8 text-sage-600" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-heading font-semibold text-warm-gray-800 tracking-tight">
+                Easeboard
+              </h1>
+              <p className="text-sm text-warm-gray-500 font-medium tracking-wide">
+                Your peaceful study companion
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600">
-            Your personalized Canvas LMS student dashboard
+          <p className="text-lg text-warm-gray-600 leading-relaxed max-w-md mx-auto">
+            Find calm in your studies with a dashboard designed to reduce stress and keep you focused
           </p>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl shadow-xl">
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <BookOpen className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Track Assignments</p>
+        {/* Main card with soft design */}
+        <div className="bg-white/80 backdrop-blur-sm p-10 rounded-3xl shadow-soft border border-white/50">
+          <div className="space-y-8">
+            {/* Benefits grid with natural tones */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-5 bg-gradient-sage rounded-2xl border border-sage-100 text-center group hover:shadow-gentle transition-all duration-300">
+                <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-sage-200 transition-colors">
+                  <BookOpen className="w-6 h-6 text-sage-600" />
+                </div>
+                <p className="text-sm text-warm-gray-700 font-medium">Gentle Assignment Tracking</p>
+                <p className="text-xs text-warm-gray-500 mt-1">Stay organized without the overwhelm</p>
               </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <Calendar className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Manage Schedule</p>
+              <div className="p-5 bg-gradient-soft rounded-2xl border border-soft-blue-100 text-center group hover:shadow-gentle transition-all duration-300">
+                <div className="w-12 h-12 bg-soft-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-soft-blue-200 transition-colors">
+                  <Calendar className="w-6 h-6 text-soft-blue-600" />
+                </div>
+                <p className="text-sm text-warm-gray-700 font-medium">Mindful Schedule Planning</p>
+                <p className="text-xs text-warm-gray-500 mt-1">Balance your time with ease</p>
               </div>
             </div>
 
+            {/* Sign in button with calming design */}
             <button
               onClick={handleGoogleLogin}
               disabled={loading || !supabaseConnected}
-              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-canvas-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center px-6 py-4 bg-sage-500 hover:bg-sage-600 text-white font-medium rounded-2xl shadow-soft hover:shadow-soft-hover disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 group"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
               ) : (
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-3 opacity-90 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -111,19 +130,33 @@ export default function AuthPage() {
                   />
                 </svg>
               )}
-              {loading ? 'Signing in...' : !supabaseConnected ? 'Connecting...' : 'Continue with Google'}
+              <span className="text-base">
+                {loading ? 'Creating your peaceful space...' : !supabaseConnected ? 'Connecting gently...' : 'Begin with Google'}
+              </span>
             </button>
 
+            {/* Connection status with soft styling */}
             {!supabaseConnected && (
-              <div className="text-center text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                Connecting to authentication service...
+              <div className="text-center text-sm text-lavender-600 bg-lavender-50 border border-lavender-200 p-4 rounded-xl">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 bg-lavender-300 rounded-full animate-soft-pulse"></div>
+                  <span>Preparing your tranquil workspace...</span>
+                </div>
               </div>
             )}
 
-            <p className="text-xs text-gray-500 text-center">
-              By continuing, you agree to securely connect your Canvas LMS account
+            {/* Privacy note with gentle styling */}
+            <p className="text-xs text-warm-gray-400 text-center leading-relaxed">
+              Your Canvas data stays private and secure. We're here to help you study with peace of mind.
             </p>
           </div>
+        </div>
+
+        {/* Additional calm messaging */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-warm-gray-500">
+            ✨ Designed for students who value clarity and calm in their academic journey
+          </p>
         </div>
       </div>
     </div>
