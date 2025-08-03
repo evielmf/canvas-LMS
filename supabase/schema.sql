@@ -6,6 +6,7 @@ CREATE TABLE canvas_tokens (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     canvas_url TEXT NOT NULL,
     encrypted_token TEXT NOT NULL,
+    token_name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id)
@@ -54,6 +55,11 @@ CREATE TABLE canvas_assignments_cache (
     description TEXT,
     submitted_at TIMESTAMP WITH TIME ZONE,
     score NUMERIC,
+    has_submission BOOLEAN DEFAULT FALSE,
+    workflow_state TEXT,
+    assignment_group_id INTEGER,
+    created_at_canvas TIMESTAMP WITH TIME ZONE,
+    updated_at_canvas TIMESTAMP WITH TIME ZONE,
     synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, canvas_assignment_id)
 );
@@ -66,6 +72,10 @@ CREATE TABLE canvas_courses_cache (
     name TEXT NOT NULL,
     course_code TEXT,
     enrollment_term_id INTEGER,
+    workflow_state TEXT,
+    start_at TIMESTAMP WITH TIME ZONE,
+    end_at TIMESTAMP WITH TIME ZONE,
+    course_color TEXT,
     synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, canvas_course_id)
 );

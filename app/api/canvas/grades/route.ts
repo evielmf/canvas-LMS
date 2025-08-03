@@ -1,108 +1,122 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/api'
-import CryptoJS from 'crypto-js'
-
-const decryptToken = (encryptedToken: string) => {
-  const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedToken, encryptionKey)
-    return bytes.toString(CryptoJS.enc.Utf8)
-  } catch (error) {
-    console.error('Error decrypting token:', error)
-    return null
-  }
-}
 
 export async function GET(request: NextRequest) {
+  const { supabase, response } = createClient(request)
+  
   try {
-    const { supabase } = createClient(request)
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    console.log('Fetching Canvas grades from cache and live data...')
+    
+    // Get user from session
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('User authentication failed:', userError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get Canvas token
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('canvas_tokens')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    if (tokenError || !tokenData) {
-      return NextResponse.json({ error: 'No Canvas token found' }, { status: 404 })
+    // Get cached assignments that have submissions (grades)
+    let assignmentsData, assignmentsError
+    
+    try {
+      const result = await supabase
+        .from('canvas_assignments_cache')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('score', 'is', null)
+        .order('submitted_at', { ascending: false })
+      
+      assignmentsData = result.data
+      assignmentsError = result.error
+    } catch (error) {
+      console.warn('Primary query failed, trying fallback:', error)
+      assignmentsError = error as any
     }
 
-    const token = decryptToken(tokenData.encrypted_token)
-    if (!token) {
-      return NextResponse.json({ error: 'Failed to decrypt token' }, { status: 400 })
-    }
-
-    // Get cached courses first
-    const { data: courses } = await supabase
-      .from('canvas_courses_cache')
-      .select('*')
-      .eq('user_id', user.id)
-
-    if (!courses || courses.length === 0) {
-      return NextResponse.json({ grades: [] })
-    }
-
-    let allGrades: any[] = []
-
-    // Fetch grades for each course
-    for (const course of courses) {
+    if (assignmentsError) {
+      console.error('Error fetching graded assignments from cache:', assignmentsError)
+      
+      // If the column doesn't exist, try with basic query
       try {
-        const gradesResponse = await fetch(
-          `${tokenData.canvas_url}/api/v1/courses/${course.canvas_course_id}/students/self/submissions?include[]=assignment&per_page=100`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('canvas_assignments_cache')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('synced_at', { ascending: false })
 
-        if (gradesResponse.ok) {
-          const submissions = await gradesResponse.json()
-          
-          // Filter for graded submissions and format as grades
-          const grades = submissions
-            .filter((submission: any) => submission.score !== null && submission.assignment)
-            .map((submission: any) => ({
-              id: submission.id,
-              score: submission.score,
-              points_possible: submission.assignment.points_possible,
-              assignment_name: submission.assignment.name,
-              course_name: course.name,
-              course_code: course.course_code,
-              graded_at: submission.graded_at,
-              assignment_id: submission.assignment.id,
-              percentage: submission.assignment.points_possible > 0 
-                ? Math.round((submission.score / submission.assignment.points_possible) * 100) 
-                : 0
-            }))
-
-          allGrades = [...allGrades, ...grades]
+        if (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError)
+          return NextResponse.json({ 
+            grades: [],
+            message: 'No grades available - try syncing your Canvas data',
+            needsSync: true
+          })
         }
-      } catch (error) {
-        console.error(`Error fetching grades for course ${course.canvas_course_id}:`, error)
+        
+        assignmentsData = fallbackData
+      } catch (fallbackError) {
+        console.error('All queries failed:', fallbackError)
+        return NextResponse.json({ 
+          grades: [],
+          message: 'No grades available - try syncing your Canvas data',
+          needsSync: true
+        })
       }
     }
 
-    // Sort grades by graded date (most recent first)
-    allGrades.sort((a, b) => new Date(b.graded_at).getTime() - new Date(a.graded_at).getTime())
+    // Transform cached assignment data to grades format
+    const grades = assignmentsData?.map(assignment => ({
+      id: `${assignment.canvas_assignment_id}_grade`,
+      score: assignment.score,
+      points_possible: assignment.points_possible,
+      assignment_name: assignment.name,
+      course_id: assignment.course_id,
+      graded_at: assignment.submitted_at || assignment.synced_at,
+      assignment_id: assignment.canvas_assignment_id,
+      percentage: assignment.points_possible > 0 
+        ? Math.round((assignment.score / assignment.points_possible) * 100) 
+        : 0
+    })) || []
 
-    return NextResponse.json({ grades: allGrades })
+    console.log(`Successfully fetched ${grades.length} grades from cache`)
 
-  } catch (error) {
-    console.error('Error fetching Canvas grades:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    // Check if cache is empty and suggest sync
+    if (grades.length === 0) {
+      const jsonResponse = NextResponse.json({ 
+        grades: [],
+        count: 0,
+        needsSync: true,
+        message: 'No grades found in cache. Please sync Canvas data.'
+      }, { status: 200 })
+      
+      // Copy cookies from supabase response
+      const cookies = response.headers.getSetCookie()
+      cookies.forEach(cookie => {
+        jsonResponse.headers.append('Set-Cookie', cookie)
+      })
+      
+      return jsonResponse
+    }
+
+    // Return response with cookies preserved
+    const jsonResponse = NextResponse.json({ 
+      grades,
+      count: grades.length,
+      fromCache: true
+    }, { status: 200 })
+    
+    // Copy cookies from supabase response
+    const cookies = response.headers.getSetCookie()
+    cookies.forEach(cookie => {
+      jsonResponse.headers.append('Set-Cookie', cookie)
+    })
+    
+    return jsonResponse
+
+  } catch (error: any) {
+    console.error('Grades API error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch grades',
+      details: error.message 
+    }, { status: 500 })
   }
 }

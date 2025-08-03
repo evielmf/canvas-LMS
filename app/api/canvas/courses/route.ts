@@ -1,97 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/api'
-import CryptoJS from 'crypto-js'
-
-const decryptToken = (encryptedToken: string) => {
-  const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedToken, encryptionKey)
-    return bytes.toString(CryptoJS.enc.Utf8)
-  } catch (error) {
-    console.error('Error decrypting token:', error)
-    return null
-  }
-}
 
 export async function GET(request: NextRequest) {
+  const { supabase, response } = createClient(request)
+  
   try {
-    const { supabase, response } = createClient(request)
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    console.log('Fetching Canvas courses from cache...')
+    
+    // Get user from session
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('User authentication failed:', userError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get Canvas token
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('canvas_tokens')
+    // Get courses from cache
+    const { data: coursesData, error: coursesError } = await supabase
+      .from('canvas_courses_cache')
       .select('*')
       .eq('user_id', user.id)
-      .single()
+      .order('name', { ascending: true })
 
-    if (tokenError) {
-      console.error('Canvas token error:', tokenError)
-      if (tokenError.code === 'PGRST116') {
-        return NextResponse.json({ error: 'No Canvas token found. Please set up Canvas in Settings.' }, { status: 404 })
-      }
-      return NextResponse.json({ error: 'Database error: ' + tokenError.message }, { status: 500 })
+    if (coursesError) {
+      console.error('Error fetching courses from cache:', coursesError)
+      return NextResponse.json({ error: 'Failed to fetch courses from cache' }, { status: 500 })
     }
 
-    if (!tokenData) {
-      return NextResponse.json({ error: 'No Canvas token found' }, { status: 404 })
-    }
+    // Transform cache data to match frontend expectations
+    const courses = coursesData?.map(course => ({
+      id: course.course_id,
+      name: course.name,
+      course_code: course.course_code,
+      start_at: course.start_at,
+      end_at: course.end_at,
+      workflow_state: course.workflow_state,
+      ...course.raw_data // Include any additional Canvas data
+    })) || []
 
-    const token = decryptToken(tokenData.encrypted_token)
-    if (!token) {
-      return NextResponse.json({ error: 'Failed to decrypt token' }, { status: 400 })
-    }
+    console.log(`Successfully fetched ${courses.length} courses from cache`)
 
-    console.log(`Fetching courses from: ${tokenData.canvas_url}`)
-
-    // Fetch courses from Canvas
-    const coursesResponse = await fetch(`${tokenData.canvas_url}/api/v1/courses?enrollment_state=active&per_page=100`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!coursesResponse.ok) {
-      console.error('Canvas API error:', coursesResponse.status, coursesResponse.statusText)
-      const errorText = await coursesResponse.text()
-      return NextResponse.json({ 
-        error: 'Canvas API error', 
-        details: `HTTP ${coursesResponse.status}: ${errorText}` 
-      }, { status: coursesResponse.status })
-    }
-
-    const courses = await coursesResponse.json()
-    console.log(`Successfully fetched ${courses.length} courses`)
-
-    // Cache courses in database
-    for (const course of courses) {
-      try {
-        await supabase
-          .from('canvas_courses_cache')
-          .upsert({
-            user_id: user.id,
-            canvas_course_id: course.id,
-            name: course.name,
-            course_code: course.course_code,
-            enrollment_term_id: course.enrollment_term_id,
-            synced_at: new Date().toISOString(),
-          })
-      } catch (cacheError) {
-        console.error('Error caching course:', cacheError)
-        // Continue with other courses even if one fails
-      }
+    // Check if cache is empty and suggest sync
+    if (courses.length === 0) {
+      const jsonResponse = NextResponse.json({ 
+        courses: [],
+        count: 0,
+        needsSync: true,
+        message: 'No courses found in cache. Please sync Canvas data.'
+      }, { status: 200 })
+      
+      // Copy cookies from supabase response
+      const cookies = response.headers.getSetCookie()
+      cookies.forEach(cookie => {
+        jsonResponse.headers.append('Set-Cookie', cookie)
+      })
+      
+      return jsonResponse
     }
 
     // Return response with cookies preserved
-    const jsonResponse = NextResponse.json({ courses })
+    const jsonResponse = NextResponse.json({ 
+      courses,
+      count: courses.length,
+      fromCache: true
+    }, { status: 200 })
     
     // Copy cookies from supabase response
     const cookies = response.headers.getSetCookie()
@@ -101,14 +72,11 @@ export async function GET(request: NextRequest) {
     
     return jsonResponse
 
-  } catch (error) {
-    console.error('Error fetching Canvas courses:', error)
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    console.error('Courses API error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch courses',
+      details: error.message 
+    }, { status: 500 })
   }
 }

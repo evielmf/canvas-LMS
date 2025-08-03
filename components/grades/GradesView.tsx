@@ -27,41 +27,49 @@ export default function GradesView() {
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedCourse, setSelectedCourse] = useState('')
 
+  // Ensure grades is always an array
+  const safeGrades = grades || []
+
   // Process grades by course
-  const gradesByCourse = grades?.reduce((acc, grade) => {
-    const courseId = grade.course_name
+  const gradesByCourse = safeGrades.reduce((acc, grade) => {
+    const courseId = grade.course_name || 'Unknown Course'
     if (!acc[courseId]) {
       acc[courseId] = {
-        courseName: grade.course_name,
+        courseName: grade.course_name || 'Unknown Course',
         grades: [],
         totalPoints: 0,
         earnedPoints: 0,
       }
     }
     acc[courseId].grades.push(grade)
-    acc[courseId].totalPoints += grade.points_possible
-    acc[courseId].earnedPoints += grade.score
+    acc[courseId].totalPoints += grade.points_possible || 0
+    acc[courseId].earnedPoints += grade.score || 0
     return acc
-  }, {} as Record<string, any>) || {}
+  }, {} as Record<string, any>)
 
   // Calculate course averages
-  const courseAverages = Object.values(gradesByCourse).map((course: any) => ({
-    name: course.courseName.length > 20 ? course.courseName.substring(0, 20) + '...' : course.courseName,
-    fullName: course.courseName,
-    average: course.totalPoints > 0 ? (course.earnedPoints / course.totalPoints) * 100 : 0,
-    totalGrades: course.grades.length,
-  }))
+  const courseAverages = Object.values(gradesByCourse).map((course: any) => {
+    const courseName = course.courseName || 'Unknown Course'
+    return {
+      name: courseName.length > 20 ? courseName.substring(0, 20) + '...' : courseName,
+      fullName: courseName,
+      average: course.totalPoints > 0 ? (course.earnedPoints / course.totalPoints) * 100 : 0,
+      totalGrades: course.grades?.length || 0,
+    }
+  })
 
   // Grade distribution
-  const gradeDistribution = grades?.reduce((acc, grade) => {
-    const percentage = grade.points_possible > 0 ? (grade.score / grade.points_possible) * 100 : 0
+  const gradeDistribution = safeGrades.reduce((acc, grade) => {
+    const pointsPossible = grade.points_possible || 0
+    const score = grade.score || 0
+    const percentage = pointsPossible > 0 ? (score / pointsPossible) * 100 : 0
     if (percentage >= 90) acc.A++
     else if (percentage >= 80) acc.B++
     else if (percentage >= 70) acc.C++
     else if (percentage >= 60) acc.D++
     else acc.F++
     return acc
-  }, { A: 0, B: 0, C: 0, D: 0, F: 0 }) || { A: 0, B: 0, C: 0, D: 0, F: 0 }
+  }, { A: 0, B: 0, C: 0, D: 0, F: 0 })
 
   const distributionData = [
     { name: 'A (90-100%)', value: gradeDistribution.A, color: '#10B981' },
@@ -72,25 +80,30 @@ export default function GradesView() {
   ].filter(item => item.value > 0)
 
   // Recent grades
-  const recentGrades = grades?.slice(0, 10) || []
+  const recentGrades = safeGrades.slice(0, 10)
 
   // Overall stats
-  const overallAverage = grades?.length ? 
-    grades.reduce((sum, grade) => {
-      const percentage = grade.points_possible > 0 ? (grade.score / grade.points_possible) * 100 : 0
+  const overallAverage = safeGrades.length ? 
+    safeGrades.reduce((sum, grade) => {
+      const pointsPossible = grade.points_possible || 0
+      const score = grade.score || 0
+      const percentage = pointsPossible > 0 ? (score / pointsPossible) * 100 : 0
       return sum + percentage
-    }, 0) / grades.length : 0
+    }, 0) / safeGrades.length : 0
 
-  const filteredGrades = grades?.filter(grade => {
-    if (searchTerm && !grade.assignment_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !grade.course_name.toLowerCase().includes(searchTerm.toLowerCase())) {
+  const filteredGrades = safeGrades.filter(grade => {
+    const assignmentName = grade.assignment_name || ''
+    const courseName = grade.course_name || ''
+    
+    if (searchTerm && !assignmentName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !courseName.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false
     }
-    if (selectedCourse && grade.course_name !== selectedCourse) {
+    if (selectedCourse && courseName !== selectedCourse) {
       return false
     }
     return true
-  }) || []
+  })
 
   if (loading) {
     return (
@@ -141,7 +154,7 @@ export default function GradesView() {
             <BookOpen className="h-8 w-8 text-green-500 mr-3" />
             <div>
               <div className="text-sm font-medium text-gray-500">Total Grades</div>
-              <div className="text-2xl font-bold text-gray-900">{grades?.length || 0}</div>
+              <div className="text-2xl font-bold text-gray-900">{safeGrades.length}</div>
             </div>
           </div>
         </div>
@@ -290,7 +303,9 @@ export default function GradesView() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredGrades.map((grade, index) => {
-                  const percentage = grade.points_possible > 0 ? (grade.score / grade.points_possible) * 100 : 0
+                  const pointsPossible = grade.points_possible || 0
+                  const score = grade.score || 0
+                  const percentage = pointsPossible > 0 ? (score / pointsPossible) * 100 : 0
                   const getGradeColor = (pct: number) => {
                     if (pct >= 90) return 'text-green-600'
                     if (pct >= 80) return 'text-blue-600'
@@ -303,15 +318,15 @@ export default function GradesView() {
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {grade.assignment_name}
+                          {grade.assignment_name || 'Unknown Assignment'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{grade.course_name}</div>
+                        <div className="text-sm text-gray-900">{grade.course_name || 'Unknown Course'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {grade.score}/{grade.points_possible}
+                          {score}/{pointsPossible}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -320,7 +335,7 @@ export default function GradesView() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {format(new Date(grade.graded_at), 'MMM d, yyyy')}
+                        {grade.graded_at ? format(new Date(grade.graded_at), 'MMM d, yyyy') : 'N/A'}
                       </td>
                     </tr>
                   )

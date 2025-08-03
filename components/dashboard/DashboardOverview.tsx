@@ -12,9 +12,11 @@ import {
   Plus
 } from 'lucide-react'
 import CanvasTokenSetup from '@/components/dashboard/CanvasTokenSetup'
+import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
 import AssignmentCard from '@/components/dashboard/AssignmentCard'
 import GradeChart from '@/components/dashboard/GradeChart'
 import UpcomingReminders from '@/components/dashboard/UpcomingReminders'
+import SyncStatusWidget from '@/components/dashboard/SyncStatusWidget'
 import { useCanvasData } from '@/hooks/useCanvasData'
 import { useCanvasToken } from '@/hooks/useCanvasToken'
 
@@ -91,6 +93,13 @@ export default function DashboardOverview() {
             setShowTokenSetup(false)
             refetchToken() // Refresh token status
           }} />
+        </div>
+      )}
+
+      {/* Canvas Data Manager - shows sync status and auto-sync */}
+      {hasToken && (
+        <div className="mb-8">
+          <SyncStatusWidget />
         </div>
       )}
 

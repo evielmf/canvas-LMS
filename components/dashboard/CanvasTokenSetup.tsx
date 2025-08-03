@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useSupabase } from '@/app/providers'
 import { Eye, EyeOff, ExternalLink, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
-import CryptoJS from 'crypto-js'
 
 interface CanvasTokenSetupProps {
   onComplete: () => void
@@ -17,13 +16,10 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
   const [loading, setLoading] = useState(false)
   const { user, supabase } = useSupabase()
 
-  const encryptToken = (token: string) => {
-    const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
-    return CryptoJS.AES.encrypt(token, encryptionKey).toString()
-  }
-
   const testCanvasConnection = async (url: string, token: string) => {
     try {
+      console.log('🧪 Testing Canvas connection from Setup...')
+      
       const response = await fetch('/api/canvas/test', {
         method: 'POST',
         headers: {
@@ -31,28 +27,70 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
         },
         body: JSON.stringify({
           canvasUrl: url,
-          token: token,
+          canvasToken: token,
         }),
       })
 
       const data = await response.json()
       
+      console.log('📊 Canvas test response:', { status: response.status, data })
+      
       if (!response.ok) {
-        console.error('Canvas connection test failed:', data)
+        console.error('❌ Canvas connection test failed:', data)
+        
+        // Show detailed error message based on response
+        let errorMessage = 'Invalid Canvas URL or token. Please check your credentials.'
+        
+        if (data.details) {
+          errorMessage = data.details
+        } else if (data.error) {
+          errorMessage = data.error
+        }
+        
+        // Add helpful hints for common errors
+        if (response.status === 401) {
+          errorMessage += '\n\nHint: Make sure your API token is valid and has not expired.'
+        } else if (response.status === 404) {
+          errorMessage += '\n\nHint: Check that your Canvas URL is correct (e.g., https://yourschool.instructure.com)'
+        }
+        
+        toast.error(errorMessage, { duration: 8000 })
         return false
       }
 
-      console.log('Canvas connection successful:', data)
+      console.log('✅ Canvas connection successful:', data)
+      
+      // Show success message with user info
+      if (data.user?.name) {
+        toast.success(`Connected successfully as ${data.user.name}`, { duration: 5000 })
+      } else {
+        toast.success('Canvas connection test successful!', { duration: 5000 })
+      }
+      
       return true
     } catch (error) {
-      console.error('Error testing Canvas connection:', error)
+      console.error('🚨 Error testing Canvas connection:', error)
+      
+      let errorMessage = 'Network error occurred'
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to server. Please check your internet connection.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      toast.error(`Connection test failed: ${errorMessage}`, { duration: 8000 })
       return false
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canvasUrl || !token || !user) return
+    if (!canvasUrl || !token || !user) {
+      toast.error('Please fill in all required fields')
+      return
+    }
 
     setLoading(true)
     
@@ -60,46 +98,91 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
       // Normalize Canvas URL
       const normalizedUrl = canvasUrl.replace(/\/+$/, '')
       
-      // Test connection
-      const isValid = await testCanvasConnection(normalizedUrl, token)
-      if (!isValid) {
-        toast.error('Invalid Canvas URL or token. Please check your credentials.')
-        setLoading(false)
+      console.log('🔄 Starting Canvas setup process...')
+      console.log('📍 Canvas URL:', normalizedUrl)
+      console.log('🔑 Token length:', token.length)
+      console.log('👤 User ID:', user.id)
+      
+      // Test connection and save via API (which handles encryption and storage)
+      const testToastId = toast.loading('Testing Canvas connection and saving...', { 
+        duration: 0,
+        icon: '🧪'
+      })
+      
+      const response = await fetch('/api/canvas/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          canvasUrl: normalizedUrl,
+          canvasToken: token,
+        }),
+      })
+
+      const data = await response.json()
+      toast.dismiss(testToastId)
+
+      if (!response.ok) {
+        console.error('❌ Canvas setup failed:', data)
+        
+        let errorMessage = 'Setup failed. Please check your credentials.'
+        if (data.details) {
+          errorMessage = data.details
+        } else if (data.error) {
+          errorMessage = data.error
+        }
+        
+        // Add helpful hints for common errors
+        if (response.status === 401) {
+          errorMessage += '\n\nHint: Make sure your API token is valid and has not expired.'
+        } else if (response.status === 404) {
+          errorMessage += '\n\nHint: Check that your Canvas URL is correct (e.g., https://yourschool.instructure.com)'
+        }
+        
+        toast.error(errorMessage, { duration: 8000 })
         return
       }
 
-      // Encrypt and store token
-      const encryptedToken = encryptToken(token)
+      console.log('✅ Canvas setup successful:', data)
+
+      // Success feedback
+      toast.success('🎉 Canvas token saved successfully!', { duration: 6000 })
       
-      const { error } = await supabase
-        .from('canvas_tokens')
-        .upsert({
-          user_id: user.id,
-          canvas_url: normalizedUrl,
-          encrypted_token: encryptedToken,
-          updated_at: new Date().toISOString(),
-        })
-
-      if (error) {
-        throw error
-      }
-
       // Try to fetch and cache courses immediately
       try {
         const coursesResponse = await fetch('/api/canvas/courses')
         if (coursesResponse.ok) {
-          console.log('Successfully fetched courses after token setup')
+          console.log('✅ Successfully fetched courses after token setup')
+          toast.success('📚 Course data synced successfully!', { duration: 3000 })
         }
       } catch (courseError) {
-        console.log('Could not fetch courses immediately, but token was saved')
+        console.log('⚠️ Could not fetch courses immediately, but token was saved')
       }
 
-      toast.success('Canvas token saved successfully!')
+      // Show integration active message
+      setTimeout(() => {
+        toast.success('🔄 Canvas integration is now active!', { 
+          duration: 5000,
+          icon: '✅'
+        })
+      }, 1500)
+
       onComplete()
     } catch (error) {
-      console.error('Error saving Canvas token:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      toast.error(`Failed to save Canvas token: ${errorMessage}`)
+      console.error('🚨 Error during Canvas setup:', error)
+      
+      let errorMessage = 'Unknown error occurred'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as any).message)
+      }
+      
+      toast.error(`Setup failed: ${errorMessage}`, { 
+        duration: 10000,
+        icon: '❌'
+      })
     } finally {
       setLoading(false)
     }

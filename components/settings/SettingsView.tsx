@@ -16,7 +16,8 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import CryptoJS from 'crypto-js'
+import crypto from 'crypto'
+import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
 
 interface CanvasToken {
   canvas_url: string
@@ -32,6 +33,7 @@ export default function SettingsView() {
   const [newCanvasUrl, setNewCanvasUrl] = useState('')
   const [newToken, setNewToken] = useState('')
   const [loading, setLoading] = useState(false)
+  const [testLoading, setTestLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const { user, supabase } = useSupabase()
 
@@ -64,14 +66,37 @@ export default function SettingsView() {
 
   const encryptToken = (token: string) => {
     const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
-    return CryptoJS.AES.encrypt(token, encryptionKey).toString()
+    try {
+      // Generate random IV
+      const iv = crypto.randomBytes(16)
+      
+      // Create cipher
+      const cipher = crypto.createCipheriv('aes-256-cbc', crypto.scryptSync(encryptionKey, 'salt', 32), iv)
+      let encrypted = cipher.update(token, 'utf8', 'hex')
+      encrypted += cipher.final('hex')
+      
+      // Return IV + encrypted data
+      return iv.toString('hex') + ':' + encrypted
+    } catch (error) {
+      console.error('Error encrypting token:', error)
+      throw error
+    }
   }
 
   const decryptToken = (encryptedToken: string) => {
     const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
     try {
-      const bytes = CryptoJS.AES.decrypt(encryptedToken, encryptionKey)
-      return bytes.toString(CryptoJS.enc.Utf8)
+      // Parse encrypted data
+      const textParts = encryptedToken.split(':')
+      const iv = Buffer.from(textParts.shift()!, 'hex')
+      const encryptedText = Buffer.from(textParts.join(':'), 'hex')
+      
+      // Create decipher
+      const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.scryptSync(encryptionKey, 'salt', 32), iv)
+      let decrypted = decipher.update(encryptedText, undefined, 'utf8')
+      decrypted += decipher.final('utf8')
+      
+      return decrypted
     } catch (error) {
       console.error('Error decrypting token:', error)
       return null
@@ -80,6 +105,8 @@ export default function SettingsView() {
 
   const testCanvasConnection = async (url: string, token: string) => {
     try {
+      console.log('🧪 Testing Canvas connection from Settings...')
+      
       const response = await fetch('/api/canvas/test', {
         method: 'POST',
         headers: {
@@ -87,28 +114,92 @@ export default function SettingsView() {
         },
         body: JSON.stringify({
           canvasUrl: url,
-          token: token,
+          canvasToken: token, // Fixed parameter name to match API
         }),
       })
 
       const data = await response.json()
       
+      console.log('📊 Canvas test response:', { status: response.status, data })
+      
       if (!response.ok) {
-        console.error('Canvas connection test failed:', data)
+        console.error('❌ Canvas connection test failed:', data)
+        
+        // Show detailed error message based on response
+        let errorMessage = 'Invalid Canvas URL or token. Please check your credentials.'
+        
+        if (data.details) {
+          errorMessage = data.details
+        } else if (data.error) {
+          errorMessage = data.error
+        }
+        
+        // Add helpful hints for common errors
+        if (response.status === 401) {
+          errorMessage += '\n\nHint: Make sure your API token is valid and has not expired.'
+        } else if (response.status === 404) {
+          errorMessage += '\n\nHint: Check that your Canvas URL is correct (e.g., https://yourschool.instructure.com)'
+        }
+        
+        toast.error(errorMessage, { duration: 8000 })
         return false
       }
 
-      console.log('Canvas connection successful:', data)
+      console.log('✅ Canvas connection successful:', data)
+      
+      // Show success message with user info
+      if (data.user?.name) {
+        toast.success(`Connected successfully as ${data.user.name}`, { duration: 5000 })
+      } else {
+        toast.success('Canvas connection test successful!', { duration: 5000 })
+      }
+      
       return true
     } catch (error) {
-      console.error('Error testing Canvas connection:', error)
+      console.error('🚨 Error testing Canvas connection:', error)
+      
+      let errorMessage = 'Network error occurred'
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to server. Please check your internet connection.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      toast.error(`Connection test failed: ${errorMessage}`, { duration: 8000 })
       return false
+    }
+  }
+
+  const handleTestConnection = async () => {
+    if (!newCanvasUrl || !newToken) {
+      toast.error('Please enter both Canvas URL and API token')
+      return
+    }
+
+    setTestLoading(true)
+    
+    try {
+      const normalizedUrl = newCanvasUrl.replace(/\/+$/, '')
+      const isValid = await testCanvasConnection(normalizedUrl, newToken)
+      
+      if (isValid) {
+        toast.success('Canvas connection test successful! ✅')
+      }
+    } catch (error) {
+      console.error('Test connection error:', error)
+    } finally {
+      setTestLoading(false)
     }
   }
 
   const handleUpdateCanvas = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newCanvasUrl || !newToken || !user) return
+    if (!newCanvasUrl || !newToken || !user) {
+      toast.error('Please fill in all required fields')
+      return
+    }
 
     setLoading(true)
     
@@ -116,34 +207,87 @@ export default function SettingsView() {
       // Normalize Canvas URL
       const normalizedUrl = newCanvasUrl.replace(/\/+$/, '')
       
-      // Test connection
+      console.log('🔄 Starting Canvas update process...')
+      console.log('📍 Canvas URL:', normalizedUrl)
+      console.log('🔑 Token length:', newToken.length)
+      console.log('👤 User ID:', user.id)
+      
+      // Test connection first with loading toast
+      const testToastId = toast.loading('Testing Canvas connection...', { 
+        duration: 0,
+        icon: '🧪'
+      })
+      
       const isValid = await testCanvasConnection(normalizedUrl, newToken)
+      toast.dismiss(testToastId)
+      
       if (!isValid) {
-        toast.error('Invalid Canvas URL or token. Please check your credentials.')
-        setLoading(false)
+        console.log('❌ Canvas connection test failed, aborting update')
         return
       }
 
-      // Encrypt and store token
-      const encryptedToken = encryptToken(newToken)
+      console.log('✅ Canvas connection successful, proceeding with save...')
       
-      const { error } = await supabase
-        .from('canvas_tokens')
-        .upsert({
-          user_id: user.id,
-          canvas_url: normalizedUrl,
-          encrypted_token: encryptedToken,
-          updated_at: new Date().toISOString(),
-        })
+      // Save with loading toast
+      const saveToastId = toast.loading('Saving Canvas settings...', { 
+        duration: 0,
+        icon: '💾'
+      })
+      
+      // Use the Canvas test API to save credentials (it handles encryption)
+      const saveResponse = await fetch('/api/canvas/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          canvasUrl: normalizedUrl,
+          canvasToken: newToken,
+        }),
+      })
 
-      if (error) throw error
+      const saveData = await saveResponse.json()
+      toast.dismiss(saveToastId)
 
-      toast.success('Canvas settings updated successfully!')
+      if (!saveResponse.ok) {
+        console.error('❌ Failed to save Canvas settings:', saveData)
+        throw new Error(saveData.details || saveData.error || 'Failed to save settings')
+      }
+
+      console.log('✅ Canvas token saved successfully via API:', saveData)
+      
+      // Success feedback
+      toast.success('🎉 Canvas settings updated successfully!', { duration: 6000 })
+      
+      // Clear the token input for security
       setNewToken('')
-      loadCanvasToken()
+      
+      // Reload the token data
+      await loadCanvasToken()
+      
+      // Show integration active message
+      setTimeout(() => {
+        toast.success('📚 Canvas integration is now active! Data will sync automatically.', { 
+          duration: 5000,
+          icon: '🔄'
+        })
+      }, 1500)
+      
     } catch (error) {
-      console.error('Error updating Canvas settings:', error)
-      toast.error('Failed to update Canvas settings')
+      console.error('🚨 Error updating Canvas settings:', error)
+      
+      let errorMessage = 'Unknown error occurred'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as any).message)
+      }
+      
+      // Show detailed error with helpful information
+      toast.error(`Failed to update Canvas settings: ${errorMessage}`, { 
+        duration: 10000,
+        icon: '❌'
+      })
     } finally {
       setLoading(false)
     }
@@ -318,30 +462,73 @@ export default function SettingsView() {
                             )}
                           </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Leave blank to keep current token
-                        </p>
+                        <div className="flex items-start mt-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                          <p className="text-xs text-amber-700">
+                            <strong>Security Note:</strong> Your API token will be encrypted and stored securely. 
+                            Only enter your token if you want to update it.
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="flex space-x-3">
+                      {/* Test Connection Button */}
+                      {newCanvasUrl && newToken && (
+                        <div className="border-t pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <button
+                              type="button"
+                              onClick={handleTestConnection}
+                              disabled={testLoading}
+                              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                            >
+                              {testLoading ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Shield className="w-4 h-4 mr-2" />
+                              )}
+                              {testLoading ? 'Testing Connection...' : 'Test Connection'}
+                            </button>
+                            <div className="text-xs text-gray-500">
+                              Recommended before saving
+                            </div>
+                          </div>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Shield className="w-3 h-3 text-blue-600" />
+                                </div>
+                              </div>
+                              <div className="ml-2">
+                                <p className="text-xs text-blue-800 font-medium">Connection Test</p>
+                                <p className="text-xs text-blue-700">
+                                  This will verify your Canvas credentials and check API access permissions.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex space-x-3 pt-4 border-t">
                         <button
                           type="submit"
-                          disabled={loading || !newCanvasUrl}
-                          className="inline-flex items-center px-4 py-2 bg-canvas-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          disabled={loading || !newCanvasUrl || !newToken}
+                          className="inline-flex items-center px-6 py-2.5 bg-canvas-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         >
                           {loading ? (
                             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                           ) : (
                             <Save className="w-4 h-4 mr-2" />
                           )}
-                          {loading ? 'Updating...' : 'Update Settings'}
+                          {loading ? 'Updating Settings...' : 'Update Canvas Settings'}
                         </button>
 
                         <button
                           type="button"
                           onClick={handleDeleteCanvas}
                           disabled={deleteLoading}
-                          className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex items-center px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         >
                           {deleteLoading ? (
                             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -350,6 +537,17 @@ export default function SettingsView() {
                           )}
                           {deleteLoading ? 'Removing...' : 'Remove Integration'}
                         </button>
+                      </div>
+                      
+                      {/* Help Text */}
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">What happens when you update?</h4>
+                        <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                          <li>Your new API token will be securely encrypted and stored</li>
+                          <li>Canvas data will be re-synced with the new credentials</li>
+                          <li>All existing cached data will be refreshed automatically</li>
+                          <li>You'll see updated courses and assignments in your dashboard</li>
+                        </ul>
                       </div>
                     </form>
                   </div>

@@ -42,7 +42,7 @@ export interface CanvasGrade {
 export function useCanvasData() {
   const { user } = useSupabase()
 
-  // Fetch courses
+  // Fetch courses - cache-first approach
   const { 
     data: coursesData, 
     isLoading: coursesLoading, 
@@ -59,11 +59,16 @@ export function useCanvasData() {
       return data.courses || []
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - data is cached in database
+    gcTime: 48 * 60 * 60 * 1000, // 48 hours garbage collection
     refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 1, // Reduced retries since data is cached
   })
 
-  // Fetch assignments
+  // Fetch assignments - cache-first approach
   const { 
     data: assignmentsData, 
     isLoading: assignmentsLoading, 
@@ -80,11 +85,16 @@ export function useCanvasData() {
       return data.assignments || []
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - data is cached in database
+    gcTime: 48 * 60 * 60 * 1000, // 48 hours garbage collection
     refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 1, // Reduced retries since data is cached
   })
 
-  // Fetch grades
+  // Fetch grades - cache-first approach
   const { 
     data: gradesData, 
     isLoading: gradesLoading, 
@@ -101,8 +111,13 @@ export function useCanvasData() {
       return data.grades || []
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 6 * 60 * 60 * 1000, // 6 hours - grades change more frequently
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours garbage collection
     refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 1, // Reduced retries since data is cached
   })
 
   const loading = coursesLoading || assignmentsLoading || gradesLoading

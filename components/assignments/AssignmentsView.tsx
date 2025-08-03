@@ -30,18 +30,22 @@ export default function AssignmentsView() {
   const [selectedCourse, setSelectedCourse] = useState('')
   const [mounted, setMounted] = useState(false)
 
+  // Ensure data is always an array
+  const safeAssignments = assignments || []
+  const safeCourses = courses || []
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const filteredAssignments = assignments?.filter(assignment => {
+  const filteredAssignments = safeAssignments.filter(assignment => {
     // Search filter
-    if (searchTerm && !assignment.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !assignment.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false
     }
 
     // Course filter
-    if (selectedCourse && assignment.course_id.toString() !== selectedCourse) {
+    if (selectedCourse && assignment.course_id?.toString() !== selectedCourse) {
       return false
     }
 
@@ -71,21 +75,21 @@ export default function AssignmentsView() {
       default:
         return true
     }
-  }) || []
+  })
 
   const stats = {
-    total: assignments?.length || 0,
-    completed: assignments?.filter(a => a.submission?.submitted_at).length || 0,
-    overdue: mounted ? assignments?.filter(a => {
+    total: safeAssignments.length,
+    completed: safeAssignments.filter(a => a.submission?.submitted_at).length,
+    overdue: mounted ? safeAssignments.filter(a => {
       if (!a.due_at) return false
       const dueDate = new Date(a.due_at)
       return isBefore(dueDate, new Date()) && !a.submission?.submitted_at
-    }).length || 0 : 0,
-    upcoming: mounted ? assignments?.filter(a => {
+    }).length : 0,
+    upcoming: mounted ? safeAssignments.filter(a => {
       if (!a.due_at) return false
       const dueDate = new Date(a.due_at)
       return isAfter(dueDate, new Date()) && !a.submission?.submitted_at
-    }).length || 0 : 0,
+    }).length : 0,
   }
 
   if (loading) {
@@ -205,8 +209,8 @@ export default function AssignmentsView() {
               title="Filter assignments by course"
             >
               <option value="">All Courses</option>
-              {courses?.map(course => (
-                <option key={course.id} value={course.id.toString()}>
+              {safeCourses.map(course => (
+                <option key={course.id} value={course.id?.toString()}>
                   {course.course_code || course.name}
                 </option>
               ))}
@@ -219,8 +223,8 @@ export default function AssignmentsView() {
       <div className="bg-white rounded-lg shadow-sm border">
         {filteredAssignments.length > 0 ? (
           <div className="divide-y divide-gray-200">
-            {filteredAssignments.map((assignment) => (
-              <div key={assignment.id} className="p-6 hover:bg-gray-50 transition-colors">
+            {filteredAssignments.map((assignment, index) => (
+              <div key={assignment.id || index} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-start space-x-3">
@@ -234,13 +238,13 @@ export default function AssignmentsView() {
                       
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-medium text-gray-900 mb-1">
-                          {assignment.name}
+                          {assignment.name || 'Unnamed Assignment'}
                         </h3>
                         
                         <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
-                          <span>{courses?.find(course => course.id === assignment.course_id)?.name || 'Unknown Course'}</span>
+                          <span>{safeCourses.find(course => course.id === assignment.course_id)?.name || 'Unknown Course'}</span>
                           <span>•</span>
-                          <span>{assignment.points_possible} points</span>
+                          <span>{assignment.points_possible || 0} points</span>
                           <span>•</span>
                           <span>{assignment.submission_types?.join(', ') || 'Assignment'}</span>
                         </div>
@@ -276,7 +280,7 @@ export default function AssignmentsView() {
                     {assignment.submission?.score !== undefined && assignment.submission?.score !== null && (
                       <div className="text-right">
                         <div className="text-sm font-medium text-gray-900">
-                          {assignment.submission.score}/{assignment.points_possible}
+                          {assignment.submission?.score || 0}/{assignment.points_possible || 0}
                         </div>
                         <div className="text-xs text-gray-500">
                           {((assignment.submission.score / assignment.points_possible) * 100).toFixed(1)}%
