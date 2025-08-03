@@ -1,0 +1,136 @@
+/* Schedule View CSS - Custom styles for dynamic colors */
+
+.schedule-item-color {
+  background-color: var(--item-color, #3B82F6);
+}
+
+.schedule-card {
+  border-left-color: var(--item-color, #3B82F6);
+}
+
+.color-picker-option {
+  background-color: var(--color-option, #3B82F6);
+}
+
+/* CSS custom properties for schedule items */
+.schedule-card[data-color="#3B82F6"] {
+  border-left-color: #3B82F6;
+}
+
+.schedule-card[data-color="#10B981"] {
+  border-left-color: #10B981;
+}
+
+.schedule-card[data-color="#F59E0B"] {
+  border-left-color: #F59E0B;
+}
+
+.schedule-card[data-color="#EF4444"] {
+  border-left-color: #EF4444;
+}
+
+.schedule-card[data-color="#8B5CF6"] {
+  border-left-color: #8B5CF6;
+}
+
+.schedule-card[data-color="#EC4899"] {
+  border-left-color: #EC4899;
+}
+
+.schedule-card[data-color="#14B8A6"] {
+  border-left-color: #14B8A6;
+}
+
+.schedule-card[data-color="#F97316"] {
+  border-left-color: #F97316;
+}
+
+.schedule-card[data-color="#6366F1"] {
+  border-left-color: #6366F1;
+}
+
+.schedule-card[data-color="#84CC16"] {
+  border-left-color: #84CC16;
+}
+
+/* Color picker options */
+.color-picker-option[data-color="#3B82F6"] {
+  background-color: #3B82F6;
+}
+
+.color-picker-option[data-color="#10B981"] {
+  background-color: #10B981;
+}
+
+.color-picker-option[data-color="#F59E0B"] {
+  background-color: #F59E0B;
+}
+
+.color-picker-option[data-color="#EF4444"] {
+  background-color: #EF4444;
+}
+
+.color-picker-option[data-color="#8B5CF6"] {
+  background-color: #8B5CF6;
+}
+
+.color-picker-option[data-color="#EC4899"] {
+  background-color: #EC4899;
+}
+
+.color-picker-option[data-color="#14B8A6"] {
+  background-color: #14B8A6;
+}
+
+.color-picker-option[data-color="#F97316"] {
+  background-color: #F97316;
+}
+
+.color-picker-option[data-color="#6366F1"] {
+  background-color: #6366F1;
+}
+
+.color-picker-option[data-color="#84CC16"] {
+  background-color: #84CC16;
+}
+
+/* Schedule item color indicators */
+.schedule-item-color[data-color="#3B82F6"] {
+  background-color: #3B82F6;
+}
+
+.schedule-item-color[data-color="#10B981"] {
+  background-color: #10B981;
+}
+
+.schedule-item-color[data-color="#F59E0B"] {
+  background-color: #F59E0B;
+}
+
+.schedule-item-color[data-color="#EF4444"] {
+  background-color: #EF4444;
+}
+
+.schedule-item-color[data-color="#8B5CF6"] {
+  background-color: #8B5CF6;
+}
+
+.schedule-item-color[data-color="#EC4899"] {
+  background-color: #EC4899;
+}
+
+.schedule-item-color[data-color="#14B8A6"] {
+  background-color: #14B8A6;
+}
+
+.schedule-item-color[data-color="#F97316"] {
+  background-color: #F97316;
+}
+
+.schedule-item-color[data-color="#6366F1"] {
+  background-color: #6366F1;
+}
+
+.schedule-item-color[data-color="#84CC16"] {
+  background-color: #84CC16;
+}
