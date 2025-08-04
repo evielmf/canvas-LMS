@@ -56,6 +56,13 @@
   --text-secondary: var(--warm-gray-600);
   --text-muted: var(--warm-gray-500);
   
+  /* Design system scheme colors */
+  --scheme-background: #ffffff;
+  --scheme-foreground: #f8fafc;
+  --scheme-text: #0f172a;
+  --scheme-border: #e2e8f0;
+  --neutral-darkest: #0f172a;
+  
   /* shadcn/ui CSS variables */
   --background: 254 252 248;
   --foreground: 41 37 36;
@@ -131,6 +138,58 @@ body {
 * {
   transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, 
               opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Matte black theme additions */
+.matte-black-bg {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Animated gradient text */
+.gradient-text {
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #3b82f6);
+  background-size: 300% 300%;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Floating animation */
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
 }
 
 /* Study café vibes - soft shadows */

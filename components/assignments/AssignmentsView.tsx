@@ -209,8 +209,8 @@ export default function AssignmentsView() {
               title="Filter assignments by course"
             >
               <option value="">All Courses</option>
-              {safeCourses.map(course => (
-                <option key={course.id} value={course.id?.toString()}>
+              {safeCourses.map((course, index) => (
+                <option key={course.id || `course-${index}`} value={course.id?.toString()}>
                   {course.course_code || course.name}
                 </option>
               ))}
@@ -224,7 +224,7 @@ export default function AssignmentsView() {
         {filteredAssignments.length > 0 ? (
           <div className="divide-y divide-gray-200">
             {filteredAssignments.map((assignment, index) => (
-              <div key={assignment.id || index} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={assignment.id || `assignment-${index}`} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-start space-x-3">

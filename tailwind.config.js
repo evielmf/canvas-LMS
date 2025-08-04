@@ -6,6 +6,17 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '0',
+      screens: {
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
+    },
     extend: {
       colors: {
         // Calming sage green palette
@@ -100,6 +111,28 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Design system scheme colors
+        'scheme-background': 'var(--scheme-background, #ffffff)',
+        'scheme-foreground': 'var(--scheme-foreground, #f8fafc)',
+        'scheme-text': 'var(--scheme-text, #0f172a)',
+        'scheme-border': 'var(--scheme-border, #e2e8f0)',
+        'neutral-darkest': 'var(--neutral-darkest, #0f172a)',
+      },
+      fontSize: {
+        'heading-h1': ['3rem', { lineHeight: '1.2', fontWeight: '700' }],
+        'heading-h2': ['2.25rem', { lineHeight: '1.2', fontWeight: '700' }],
+        'heading-h3': ['1.875rem', { lineHeight: '1.3', fontWeight: '700' }],
+        'heading-h4': ['1.5rem', { lineHeight: '1.3', fontWeight: '600' }],
+        'heading-h5': ['1.25rem', { lineHeight: '1.4', fontWeight: '600' }],
+        'text-medium': ['1rem', { lineHeight: '1.6', fontWeight: '400' }],
+        'text-regular': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
+        'text-small': ['0.75rem', { lineHeight: '1.4', fontWeight: '400' }],
+      },
+      borderRadius: {
+        'button': '0.5rem',
+        'card': '0.75rem',
+        'image': '0.75rem',
+        'carousel': '50%',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
