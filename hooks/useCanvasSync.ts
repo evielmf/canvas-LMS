@@ -59,13 +59,61 @@ export function useCanvasSync() {
       })
       
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.details || error.error || 'Sync failed')
+        const errorData = await response.json()
+        
+        // Handle specific error cases
+        if (errorData.code === 'TOKEN_INVALID') {
+          return {
+            error: true,
+            code: 'TOKEN_INVALID',
+            message: errorData.error,
+            needsReconfiguration: true
+          }
+        }
+        
+        // Handle token not configured case
+        if (errorData.error?.includes('Canvas token not configured') || 
+            errorData.error?.includes('Canvas token not found')) {
+          return {
+            error: true,
+            code: 'TOKEN_NOT_CONFIGURED',
+            message: 'Canvas token not configured',
+            needsReconfiguration: true
+          }
+        }
+        
+        throw new Error(errorData.details || errorData.error || 'Sync failed')
       }
       
       return response.json()
     },
     onSuccess: (data) => {
+      // Handle token invalid case
+      if (data.error && data.code === 'TOKEN_INVALID') {
+        console.log('🔧 Canvas token invalid - needs reconfiguration')
+        toast.error('Canvas token invalid. Please reconfigure your Canvas connection.', {
+          duration: 8000,
+          icon: '🔧'
+        })
+        
+        // Invalidate token status to trigger UI update
+        queryClient.invalidateQueries({ queryKey: ['canvas-token'] })
+        return
+      }
+      
+      // Handle token not configured case
+      if (data.error && data.code === 'TOKEN_NOT_CONFIGURED') {
+        console.log('⚙️ Canvas token not configured')
+        toast.error('Canvas not connected. Please set up your Canvas connection first.', {
+          duration: 10000,
+          icon: '⚙️'
+        })
+        
+        // Invalidate token status to trigger UI update
+        queryClient.invalidateQueries({ queryKey: ['canvas-token'] })
+        return
+      }
+      
       console.log('✅ Canvas sync completed:', data.stats)
       
       // Show success toast
