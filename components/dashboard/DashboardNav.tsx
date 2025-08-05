@@ -14,7 +14,7 @@ import {
   Menu,
   X,
   Bell,
-  User as UserIcon
+  TrendingUp
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -41,7 +41,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Assignments', href: '/dashboard/assignments', icon: BookOpen },
     { name: 'Grades', href: '/dashboard/grades', icon: BarChart3 },
-    { name: 'Professor', href: '/dashboard/professor', icon: UserIcon },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
     { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]

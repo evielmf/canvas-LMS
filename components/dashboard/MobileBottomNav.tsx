@@ -8,7 +8,8 @@ import {
   BookOpen, 
   BarChart3, 
   Settings,
-  User as UserIcon
+  User as UserIcon,
+  TrendingUp
 } from 'lucide-react'
 
 export default function MobileBottomNav() {
@@ -17,9 +18,9 @@ export default function MobileBottomNav() {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Assignments', href: '/dashboard/assignments', icon: BookOpen },
-    { name: 'Grades', href: '/dashboard/grades', icon: BarChart3 },
     { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Grades', href: '/dashboard/grades', icon: BarChart3 },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
   ]
 
   return (
