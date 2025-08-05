@@ -76,7 +76,6 @@ export default function AuthPage() {
             <nav className="flex space-x-6">
               <a href="#features" className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Features</a>
               <a href="#benefits" className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Benefits</a>
-              <a href="#demo" className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Demo</a>
               <a href="#support" className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Support</a>
             </nav>
           </div>
@@ -119,7 +118,6 @@ export default function AuthPage() {
               <nav className="flex flex-col space-y-3">
                 <a href="#features" className="text-gray-300 hover:text-white transition-colors text-sm font-medium py-2">Features</a>
                 <a href="#benefits" className="text-gray-300 hover:text-white transition-colors text-sm font-medium py-2">Benefits</a>
-                <a href="#demo" className="text-gray-300 hover:text-white transition-colors text-sm font-medium py-2">Demo</a>
                 <a href="#support" className="text-gray-300 hover:text-white transition-colors text-sm font-medium py-2">Support</a>
               </nav>
               <div className="flex flex-col gap-3 pt-4 border-t border-gray-800">
@@ -386,6 +384,107 @@ export default function AuthPage() {
         </div>
       </section>
 
+      {/* Support Section */}
+      <section id="support" className="px-[5%] py-16 md:py-24 lg:py-28 bg-black">
+        <div className="container">
+          <div className="mb-12 text-center md:mb-18 lg:mb-20">
+            <div className="mx-auto w-full max-w-lg">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Need Help? We're Here for You
+              </h2>
+              <p className="text-lg text-gray-300">
+                Get the support you need to make the most of Easeboard
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 items-start justify-center gap-y-12 md:grid-cols-3 md:gap-x-8 md:gap-y-16 lg:gap-x-12">
+            <div className="flex flex-col items-center text-center group">
+              <div className="mb-5 md:mb-6">
+                <div className="size-16 flex items-center justify-center bg-gray-800/50 rounded-2xl border border-gray-700 group-hover:border-blue-500/50 transition-all duration-300 backdrop-blur-sm glow-blue group-hover:scale-110 transform">
+                  <Users className="w-8 h-8 text-blue-400" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold mb-5 md:mb-6 text-white">
+                Getting Started Guide
+              </h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Step-by-step instructions to connect your Canvas account and set up your dashboard for the first time.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
+                <button className="inline-flex items-center justify-center rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 gap-2 text-blue-400 hover:text-blue-300 p-0">
+                  View Guide
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center group">
+              <div className="mb-5 md:mb-6">
+                <div className="size-16 flex items-center justify-center bg-gray-800/50 rounded-2xl border border-gray-700 group-hover:border-green-500/50 transition-all duration-300 backdrop-blur-sm glow-green group-hover:scale-110 transform">
+                  <BookOpen className="w-8 h-8 text-green-400" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold mb-5 md:mb-6 text-white">
+                Documentation & FAQs
+              </h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Find answers to common questions about features, troubleshooting, and making the most of your dashboard.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
+                <button className="inline-flex items-center justify-center rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 gap-2 text-green-400 hover:text-green-300 p-0">
+                  Browse FAQs
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center group">
+              <div className="mb-5 md:mb-6">
+                <div className="size-16 flex items-center justify-center bg-gray-800/50 rounded-2xl border border-gray-700 group-hover:border-purple-500/50 transition-all duration-300 backdrop-blur-sm glow-purple group-hover:scale-110 transform">
+                  <GraduationCap className="w-8 h-8 text-purple-400" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold mb-5 md:mb-6 text-white">
+                Contact Support
+              </h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Have a specific question or issue? Reach out to our support team and we'll help you get back on track.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
+                <a href="mailto:support@easeboard.app" className="inline-flex items-center justify-center rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 gap-2 text-purple-400 hover:text-purple-300 p-0">
+                  Get in Touch
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          {/* Contact Information */}
+          <div className="mt-16 text-center">
+            <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800 backdrop-blur-sm max-w-2xl mx-auto">
+              <h3 className="text-xl font-bold text-white mb-4">Get in Touch</h3>
+              <p className="text-gray-300 mb-6">
+                For technical support, feature requests, or general inquiries, we're here to help.
+              </p>
+              <div className="space-y-3 text-sm text-gray-300">
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="font-medium">Support Email:</span>
+                  <a href="mailto:support@easeboard.app" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    support@easeboard.app
+                  </a>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="font-medium">Response Time:</span>
+                  <span>Usually within 24 hours</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="font-medium">Hours:</span>
+                  <span>Monday - Friday, 9 AM - 6 PM EST</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer with matte black styling */}
       <footer className="px-[5%] py-12 md:py-18 lg:py-20 border-t border-gray-800 bg-black">
         <div className="container">
@@ -398,9 +497,9 @@ export default function AuthPage() {
               Built with ❤️ for the academic community.
             </p>
             <div className="mt-6 flex justify-center space-x-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+              <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#support" className="hover:text-white transition-colors">Support</a>
             </div>
           </div>
         </div>

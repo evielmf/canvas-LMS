@@ -21,6 +21,7 @@ module.exports = {
       colors: {
         // Calming sage green palette
         sage: {
+          25: 'rgb(252, 253, 252)',
           50: 'rgb(248, 250, 248)',
           100: 'rgb(240, 244, 240)',
           200: 'rgb(226, 235, 227)',
@@ -174,5 +175,29 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.line-clamp-1': {
+          overflow: 'hidden',
+          display: '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '1',
+        },
+        '.line-clamp-2': {
+          overflow: 'hidden',
+          display: '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '2',
+        },
+        '.line-clamp-3': {
+          overflow: 'hidden',
+          display: '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '3',
+        },
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 }

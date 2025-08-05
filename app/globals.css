@@ -214,9 +214,42 @@ input, textarea, select {
   color: rgb(var(--text-primary));
 }
 
+/* Mobile-first input adjustments */
+@media (max-width: 768px) {
+  input, textarea, select {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 12px;
+  }
+}
+
 input:focus, textarea:focus, select:focus {
   border-color: rgb(var(--sage-400));
   background: white;
   outline: none;
   box-shadow: 0 0 0 3px rgba(var(--sage-400), 0.1);
+}
+
+/* Mobile-optimized touch targets */
+@media (max-width: 768px) {
+  button, .btn, a[role="button"], [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve tap targets for mobile */
+  .tap-target {
+    padding: 12px;
+    margin: 4px;
+  }
+}
+
+/* Mobile-friendly text sizes */
+@media (max-width: 640px) {
+  .text-xs { font-size: 0.75rem; }
+  .text-sm { font-size: 0.875rem; }
+  .text-base { font-size: 1rem; }
+  .text-lg { font-size: 1.125rem; }
+  .text-xl { font-size: 1.25rem; }
+  .text-2xl { font-size: 1.5rem; }
 }

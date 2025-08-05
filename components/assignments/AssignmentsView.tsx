@@ -14,6 +14,11 @@ import {
 } from 'lucide-react'
 import { format, isAfter, isBefore, addDays } from 'date-fns'
 import AssignmentCard from '@/components/dashboard/AssignmentCard'
+import MobileAssignmentCard from '@/components/dashboard/MobileAssignmentCard'
+import FloatingActionButton from '@/components/dashboard/FloatingActionButton'
+import BottomSheet from '@/components/ui/BottomSheet'
+import PullToRefresh from '@/components/ui/PullToRefresh'
+import toast from 'react-hot-toast'
 
 const filterOptions = [
   { value: 'all', label: 'All Assignments' },
@@ -24,11 +29,12 @@ const filterOptions = [
 ]
 
 export default function AssignmentsView() {
-  const { assignments, courses, loading } = useCanvasData()
+  const { assignments, courses, loading, refetch } = useCanvasData()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedCourse, setSelectedCourse] = useState('')
   const [mounted, setMounted] = useState(false)
+  const [showFilterSheet, setShowFilterSheet] = useState(false)
 
   // Ensure data is always an array
   const safeAssignments = assignments || []
@@ -37,6 +43,27 @@ export default function AssignmentsView() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Mobile-specific handlers
+  const handleRefresh = async () => {
+    await refetch()
+    toast.success('Assignments refreshed! 📚')
+  }
+
+  const handleMarkComplete = (assignmentId: string) => {
+    toast.success('Assignment marked as complete! ✅')
+    // TODO: Implement actual completion logic
+  }
+
+  const handleSnoozeAssignment = (assignmentId: string) => {
+    toast.success('Assignment snoozed! 😴')
+    // TODO: Implement actual snooze logic
+  }
+
+  const handleSyncAction = async () => {
+    await refetch()
+    toast.success('Assignments synced! ✨')
+  }
 
   const filteredAssignments = safeAssignments.filter(assignment => {
     // Search filter
@@ -94,17 +121,17 @@ export default function AssignmentsView() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="py-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="h-6 lg:h-8 bg-gray-200 rounded w-1/3 mb-4 lg:mb-6"></div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+              <div key={i} className="h-16 lg:h-20 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 lg:space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
+              <div key={i} className="h-24 lg:h-32 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -113,83 +140,99 @@ export default function AssignmentsView() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Assignments</h1>
-        <p className="text-gray-600">
-          Manage and track all your course assignments in one place.
-        </p>
-      </div>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="py-6">
+        {/* Header - Mobile optimized */}
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl lg:text-3xl font-heading font-semibold text-warm-gray-800 mb-2 tracking-tight">
+            📚 Your Assignments
+          </h1>
+          <p className="text-warm-gray-600 leading-relaxed">
+            Manage and track all your peaceful study tasks.
+          </p>
+        </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <div className="flex items-center">
-            <BookOpen className="h-8 w-8 text-blue-500 mr-3" />
-            <div>
-              <div className="text-sm font-medium text-gray-500">Total</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+        {/* Stats Cards - Mobile optimized grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-soft border border-sage-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-sage-100 rounded-lg">
+                <BookOpen className="h-5 w-5 text-sage-600" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-warm-gray-500">Total</div>
+                <div className="text-xl font-heading font-semibold text-warm-gray-800">{stats.total}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-soft border border-lavender-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-lavender-100 rounded-lg">
+                <Clock className="h-5 w-5 text-lavender-500" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-warm-gray-500">Upcoming</div>
+                <div className="text-xl font-heading font-semibold text-warm-gray-800">{stats.upcoming}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-soft border border-red-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-warm-gray-500">Overdue</div>
+                <div className="text-xl font-heading font-semibold text-warm-gray-800">{stats.overdue}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-soft border border-green-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-warm-gray-500">Done</div>
+                <div className="text-xl font-heading font-semibold text-warm-gray-800">{stats.completed}</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <div className="flex items-center">
-            <Clock className="h-8 w-8 text-orange-500 mr-3" />
-            <div>
-              <div className="text-sm font-medium text-gray-500">Upcoming</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.upcoming}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <div className="flex items-center">
-            <AlertTriangle className="h-8 w-8 text-red-500 mr-3" />
-            <div>
-              <div className="text-sm font-medium text-gray-500">Overdue</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.overdue}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <div className="flex items-center">
-            <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
-            <div>
-              <div className="text-sm font-medium text-gray-500">Completed</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.completed}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-        <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        {/* Mobile Search + Filter Button */}
+        <div className="mb-6">
+          <div className="flex space-x-3">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-warm-gray-400" />
               <input
                 type="text"
                 placeholder="Search assignments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-canvas-blue focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-sage-200 focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent text-sm"
               />
             </div>
+            
+            {/* Mobile Filter Button */}
+            <button
+              onClick={() => setShowFilterSheet(true)}
+              className="lg:hidden flex items-center justify-center w-12 h-12 bg-sage-600 text-white rounded-xl shadow-soft hover:bg-sage-700 transition-all duration-200"
+            >
+              <Filter className="h-5 w-5" />
+            </button>
           </div>
 
-          {/* Status Filter */}
-          <div className="sm:w-48">
+          {/* Desktop Filters */}
+          <div className="hidden lg:flex space-x-4 mt-4">
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-canvas-blue focus:border-transparent"
-              aria-label="Filter assignments by status"
-              title="Filter assignments by status"
+              className="px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-sage-200 focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
             >
               {filterOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -197,16 +240,11 @@ export default function AssignmentsView() {
                 </option>
               ))}
             </select>
-          </div>
 
-          {/* Course Filter */}
-          <div className="sm:w-48">
             <select
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-canvas-blue focus:border-transparent"
-              aria-label="Filter assignments by course"
-              title="Filter assignments by course"
+              className="px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-sage-200 focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
             >
               <option value="">All Courses</option>
               {safeCourses.map((course, index) => (
@@ -217,103 +255,101 @@ export default function AssignmentsView() {
             </select>
           </div>
         </div>
-      </div>
 
-      {/* Assignments List */}
-      <div className="bg-white rounded-lg shadow-sm border">
+        {/* Assignments List */}
         {filteredAssignments.length > 0 ? (
-          <div className="divide-y divide-gray-200">
+          <div className="space-y-3 lg:space-y-4">
             {filteredAssignments.map((assignment, index) => (
-              <div key={assignment.id || `assignment-${index}`} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">
-                        {assignment.submission?.submitted_at ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-gray-400" />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">
-                          {assignment.name || 'Unnamed Assignment'}
-                        </h3>
-                        
-                        <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
-                          <span>{safeCourses.find(course => course.id === assignment.course_id)?.name || 'Unknown Course'}</span>
-                          <span>•</span>
-                          <span>{assignment.points_possible || 0} points</span>
-                          <span>•</span>
-                          <span>{assignment.submission_types?.join(', ') || 'Assignment'}</span>
-                        </div>
-
-                        <div className="flex items-center space-x-4 text-sm">
-                          {assignment.due_at && (
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className={`${
-                                mounted && isBefore(new Date(assignment.due_at), new Date()) && !assignment.submission?.submitted_at
-                                  ? 'text-red-600 font-medium'
-                                  : 'text-gray-600'
-                              }`}>
-                                Due {format(new Date(assignment.due_at), 'MMM d, yyyy • h:mm a')}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {assignment.submission?.submitted_at && (
-                            <div className="flex items-center space-x-1 text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              <span>
-                                Submitted {format(new Date(assignment.submission.submitted_at), 'MMM d')}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 ml-4">
-                    {assignment.submission?.score !== undefined && assignment.submission?.score !== null && (
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {assignment.submission?.score || 0}/{assignment.points_possible || 0}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {((assignment.submission.score / assignment.points_possible) * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                    )}
-                    
-                    <a
-                      href={assignment.html_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-canvas-blue hover:text-blue-700 transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      View
-                    </a>
-                  </div>
+              <div key={assignment.id || `assignment-${index}`}>
+                {/* Desktop assignment card */}
+                <div className="hidden lg:block">
+                  <AssignmentCard assignment={assignment} />
+                </div>
+                {/* Mobile assignment card with swipe gestures */}
+                <div className="lg:hidden">
+                  <MobileAssignmentCard 
+                    assignment={assignment}
+                    onMarkComplete={handleMarkComplete}
+                    onSnooze={handleSnoozeAssignment}
+                  />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
-            <p className="text-gray-500">
+          <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-2xl">
+            <div className="w-16 h-16 bg-sage-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="h-8 w-8 text-sage-500" />
+            </div>
+            <h3 className="text-lg font-heading font-medium text-warm-gray-800 mb-2">
+              {searchTerm || selectedFilter !== 'all' || selectedCourse
+                ? 'No assignments match your filters 🔍'
+                : 'No assignments found 📚'}
+            </h3>
+            <p className="text-warm-gray-600 leading-relaxed">
               {searchTerm || selectedFilter !== 'all' || selectedCourse
                 ? 'Try adjusting your filters to see more assignments.'
                 : 'Connect your Canvas account to see your assignments.'}
             </p>
           </div>
         )}
+
+        {/* Mobile Filter Bottom Sheet */}
+        <BottomSheet
+          isOpen={showFilterSheet}
+          onClose={() => setShowFilterSheet(false)}
+          title="Filter Assignments"
+        >
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-warm-gray-800 mb-2">
+                Status Filter
+              </label>
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                className="w-full px-4 py-3 bg-sage-50 rounded-xl border border-sage-200 focus:outline-none focus:ring-2 focus:ring-sage-400"
+              >
+                {filterOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-warm-gray-800 mb-2">
+                Course Filter
+              </label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                className="w-full px-4 py-3 bg-sage-50 rounded-xl border border-sage-200 focus:outline-none focus:ring-2 focus:ring-sage-400"
+              >
+                <option value="">All Courses</option>
+                {safeCourses.map((course, index) => (
+                  <option key={course.id || `course-${index}`} value={course.id?.toString()}>
+                    {course.course_code || course.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => setShowFilterSheet(false)}
+              className="w-full py-3 bg-sage-600 text-white rounded-xl font-medium hover:bg-sage-700 transition-colors"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </BottomSheet>
       </div>
-    </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onSync={handleSyncAction}
+      />
+    </PullToRefresh>
   )
 }

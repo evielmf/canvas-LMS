@@ -9,20 +9,25 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react'
 import CanvasTokenSetup from '@/components/dashboard/CanvasTokenSetup'
 import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
 import AssignmentCard from '@/components/dashboard/AssignmentCard'
+import MobileAssignmentCard from '@/components/dashboard/MobileAssignmentCard'
 import GradeChart from '@/components/dashboard/GradeChart'
 import UpcomingReminders from '@/components/dashboard/UpcomingReminders'
 import SyncStatusWidget from '@/components/dashboard/SyncStatusWidget'
+import FloatingActionButton from '@/components/dashboard/FloatingActionButton'
+import PullToRefresh from '@/components/ui/PullToRefresh'
 import { useCanvasData } from '@/hooks/useCanvasData'
 import { useCanvasToken } from '@/hooks/useCanvasToken'
+import toast from 'react-hot-toast'
 
 export default function DashboardOverview() {
   const { user } = useSupabase()
-  const { assignments, courses, grades, loading } = useCanvasData()
+  const { assignments, courses, grades, loading, refetch } = useCanvasData()
   const { hasToken, isLoading: tokenLoading, refetch: refetchToken } = useCanvasToken()
   const [showTokenSetup, setShowTokenSetup] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -30,6 +35,37 @@ export default function DashboardOverview() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Handle refresh for pull-to-refresh
+  const handleRefresh = async () => {
+    await refetch()
+    toast.success('Dashboard refreshed! 🌿')
+  }
+
+  // Handle FAB actions
+  const handleSyncAction = async () => {
+    await refetch()
+    toast.success('Data synced successfully! ✨')
+  }
+
+  const handleAddReminder = () => {
+    toast.success('Study reminder feature coming soon! 📚')
+  }
+
+  const handleAddSchedule = () => {
+    toast.success('Schedule management coming soon! 📅')
+  }
+
+  // Handle mobile assignment actions
+  const handleMarkComplete = (assignmentId: string) => {
+    toast.success('Assignment marked as complete! ✅')
+    // TODO: Implement actual completion logic
+  }
+
+  const handleSnoozeAssignment = (assignmentId: string) => {
+    toast.success('Assignment snoozed! 😴')
+    // TODO: Implement actual snooze logic
+  }
 
   // Get upcoming assignments (next 7 days) - only on client side
   const upcomingAssignments = mounted && assignments
@@ -56,18 +92,19 @@ export default function DashboardOverview() {
     grades.reduce((sum, grade) => sum + (grade.score || 0), 0) / grades.length : 0
 
   return (
-    <div className="py-6">
-      {/* Welcome Header with calming design */}
-      <div className="mb-10">
-        <div className="text-center max-w-2xl mx-auto">
-          <h1 className="text-4xl font-heading font-semibold text-warm-gray-800 mb-3 tracking-tight">
-            Good {mounted && new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0]}
-          </h1>
-          <p className="text-lg text-warm-gray-600 leading-relaxed">
-            Take a deep breath and see what's on your peaceful study journey today ✨
-          </p>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="py-6">
+        {/* Welcome Header with calming design - mobile optimized */}
+        <div className="mb-6 lg:mb-10">
+          <div className="text-center max-w-2xl mx-auto px-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-semibold text-warm-gray-800 mb-2 lg:mb-3 tracking-tight">
+              Good {mounted && new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0]}
+            </h1>
+            <p className="text-base lg:text-lg text-warm-gray-600 leading-relaxed">
+              Take a deep breath and see what's on your peaceful study journey today ✨
+            </p>
+          </div>
         </div>
-      </div>
 
       {/* Canvas Token Setup with gentle styling */}
       {!hasToken && !showTokenSetup && !tokenLoading && (
@@ -112,58 +149,58 @@ export default function DashboardOverview() {
         </div>
       )}
 
-      {/* Stats Cards with calming colors and soft shadows */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-soft border border-sage-100 hover:shadow-soft-hover transition-all duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-sage-100 rounded-xl">
-              <BookOpen className="h-6 w-6 text-sage-600" />
+      {/* Stats Cards with calming colors and soft shadows - Mobile optimized */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-8 lg:mb-12">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-soft border border-sage-100 hover:shadow-soft-hover transition-all duration-300">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="p-2 lg:p-3 bg-sage-100 rounded-lg lg:rounded-xl">
+              <BookOpen className="h-5 w-5 lg:h-6 lg:w-6 text-sage-600" />
             </div>
             <div>
-              <div className="text-sm font-medium text-warm-gray-500 mb-1">Study Courses</div>
-              <div className="text-2xl font-heading font-semibold text-warm-gray-800">
+              <div className="text-xs lg:text-sm font-medium text-warm-gray-500 mb-1">Study Courses</div>
+              <div className="text-xl lg:text-2xl font-heading font-semibold text-warm-gray-800">
                 {courses?.length || 0}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-soft border border-lavender-100 hover:shadow-soft-hover transition-all duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-lavender-100 rounded-xl">
-              <Clock className="h-6 w-6 text-lavender-500" />
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-soft border border-lavender-100 hover:shadow-soft-hover transition-all duration-300">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="p-2 lg:p-3 bg-lavender-100 rounded-lg lg:rounded-xl">
+              <Clock className="h-5 w-5 lg:h-6 lg:w-6 text-lavender-500" />
             </div>
             <div>
-              <div className="text-sm font-medium text-warm-gray-500 mb-1">Due Soon</div>
-              <div className="text-2xl font-heading font-semibold text-warm-gray-800">
+              <div className="text-xs lg:text-sm font-medium text-warm-gray-500 mb-1">Due Soon</div>
+              <div className="text-xl lg:text-2xl font-heading font-semibold text-warm-gray-800">
                 {mounted ? (upcomingAssignments?.length || 0) : 0}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-soft border border-soft-blue-100 hover:shadow-soft-hover transition-all duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-soft-blue-100 rounded-xl">
-              <CheckCircle className="h-6 w-6 text-soft-blue-500" />
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-soft border border-soft-blue-100 hover:shadow-soft-hover transition-all duration-300">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="p-2 lg:p-3 bg-soft-blue-100 rounded-lg lg:rounded-xl">
+              <CheckCircle className="h-5 w-5 lg:h-6 lg:w-6 text-soft-blue-500" />
             </div>
             <div>
-              <div className="text-sm font-medium text-warm-gray-500 mb-1">Completed</div>
-              <div className="text-2xl font-heading font-semibold text-warm-gray-800">
+              <div className="text-xs lg:text-sm font-medium text-warm-gray-500 mb-1">Completed</div>
+              <div className="text-xl lg:text-2xl font-heading font-semibold text-warm-gray-800">
                 {completedAssignments}/{totalAssignments}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-soft border border-cream-200 hover:shadow-soft-hover transition-all duration-300">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-cream-200 rounded-xl">
-              <TrendingUp className="h-6 w-6 text-warm-gray-600" />
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-soft border border-cream-200 hover:shadow-soft-hover transition-all duration-300">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="p-2 lg:p-3 bg-cream-200 rounded-lg lg:rounded-xl">
+              <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-warm-gray-600" />
             </div>
             <div>
-              <div className="text-sm font-medium text-warm-gray-500 mb-1">Average Grade</div>
-              <div className="text-2xl font-heading font-semibold text-warm-gray-800">
+              <div className="text-xs lg:text-sm font-medium text-warm-gray-500 mb-1">Average Grade</div>
+              <div className="text-xl lg:text-2xl font-heading font-semibold text-warm-gray-800">
                 {averageGrade ? `${averageGrade.toFixed(1)}%` : 'N/A'}
               </div>
             </div>
@@ -171,12 +208,12 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Upcoming Assignments with journal-like design */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft border border-sage-100">
-          <div className="p-6 border-b border-sage-100">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        {/* Upcoming Assignments with journal-like design - Mobile optimized */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl lg:rounded-3xl shadow-soft border border-sage-100">
+          <div className="p-4 lg:p-6 border-b border-sage-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-heading font-semibold text-warm-gray-800">
+              <h2 className="text-lg lg:text-xl font-heading font-semibold text-warm-gray-800">
                 📝 Upcoming Tasks
               </h2>
               <a 
@@ -187,8 +224,7 @@ export default function DashboardOverview() {
               </a>
             </div>
           </div>
-          <div className="p-6">
-            {loading ? (
+          <div className="p-4 lg:p-6">{loading ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="animate-soft-pulse">
@@ -200,7 +236,20 @@ export default function DashboardOverview() {
             ) : mounted && upcomingAssignments && upcomingAssignments.length > 0 ? (
               <div className="space-y-4">
                 {upcomingAssignments.map((assignment) => (
-                  <AssignmentCard key={assignment.id} assignment={assignment} />
+                  <div key={assignment.id}>
+                    {/* Desktop assignment card */}
+                    <div className="hidden lg:block">
+                      <AssignmentCard assignment={assignment} />
+                    </div>
+                    {/* Mobile assignment card with swipe gestures */}
+                    <div className="lg:hidden">
+                      <MobileAssignmentCard 
+                        assignment={assignment}
+                        onMarkComplete={handleMarkComplete}
+                        onSnooze={handleSnoozeAssignment}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -219,11 +268,11 @@ export default function DashboardOverview() {
           </div>
         </div>
 
-        {/* Grade Progress with calm design */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft border border-lavender-100">
-          <div className="p-6 border-b border-lavender-100">
+        {/* Grade Progress with calm design - Mobile optimized */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl lg:rounded-3xl shadow-soft border border-lavender-100">
+          <div className="p-4 lg:p-6 border-b border-lavender-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-heading font-semibold text-warm-gray-800">
+              <h2 className="text-lg lg:text-xl font-heading font-semibold text-warm-gray-800">
                 📊 Grade Progress
               </h2>
               <a 
@@ -234,16 +283,24 @@ export default function DashboardOverview() {
               </a>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             <GradeChart grades={grades} />
           </div>
         </div>
       </div>
 
       {/* Study Reminders with gentle personal assistant vibe */}
-      <div className="mt-12">
+      <div className="mt-8 lg:mt-12">
         <UpcomingReminders />
       </div>
     </div>
+
+    {/* Floating Action Button - Mobile optimized */}
+    <FloatingActionButton
+      onSync={handleSyncAction}
+      onAddReminder={handleAddReminder}
+      onAddSchedule={handleAddSchedule}
+    />
+  </PullToRefresh>
   )
 }
