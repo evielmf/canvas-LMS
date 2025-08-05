@@ -54,7 +54,18 @@ export async function POST(request: NextRequest) {
 
     const token = decryptToken(tokenData.encrypted_token)
     if (!token) {
-      return NextResponse.json({ error: 'Failed to decrypt Canvas token' }, { status: 400 })
+      console.warn('🔧 Failed to decrypt Canvas token, likely due to encryption key change. Clearing invalid token...')
+      
+      // Clear the invalid token
+      await supabase
+        .from('canvas_tokens')
+        .delete()
+        .eq('user_id', user.id)
+      
+      return NextResponse.json({ 
+        error: 'Canvas token invalid - please reconfigure your Canvas connection',
+        code: 'TOKEN_INVALID'
+      }, { status: 400 })
     }
 
     const baseUrl = tokenData.canvas_url.replace(/\/+$/, '') // Remove trailing slashes

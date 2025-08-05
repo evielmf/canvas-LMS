@@ -2,16 +2,16 @@ import { createClient } from '@/utils/supabase/api'
 import crypto from 'crypto'
 
 const decryptToken = (encryptedToken: string) => {
-  const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
+  const encryptionKey = process.env.CANVAS_ENCRYPTION_KEY || 'your-32-character-secret-key-here'
   try {
     // Parse encrypted data
     const textParts = encryptedToken.split(':')
     const iv = Buffer.from(textParts.shift()!, 'hex')
-    const encryptedText = Buffer.from(textParts.join(':'), 'hex')
+    const encryptedText = textParts.join(':')
     
-    // Create decipher
-    const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.scryptSync(encryptionKey, 'salt', 32), iv)
-    let decrypted = decipher.update(encryptedText, undefined, 'utf8')
+    // Create decipher using the same method as other routes
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey.slice(0, 32), 'utf8'), iv)
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8')
     decrypted += decipher.final('utf8')
     
     return decrypted

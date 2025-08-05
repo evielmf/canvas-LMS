@@ -28,20 +28,20 @@ export async function POST(request: NextRequest) {
 
     const { canvas_url, encrypted_token } = tokenData
     
-    // Decrypt token (using Node.js crypto to match test route)
+    // Decrypt token (using standardized encryption method)
     const crypto = require('crypto')
-    const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'canvas-dashboard-key'
+    const encryptionKey = process.env.CANVAS_ENCRYPTION_KEY || 'your-32-character-secret-key-here'
     let apiToken: string
     
     try {
       // Parse encrypted data
       const textParts = encrypted_token.split(':')
       const iv = Buffer.from(textParts.shift()!, 'hex')
-      const encryptedText = Buffer.from(textParts.join(':'), 'hex')
+      const encryptedText = textParts.join(':')
       
-      // Create decipher
-      const decipher = crypto.createDecipheriv('aes-256-cbc', crypto.scryptSync(encryptionKey, 'salt', 32), iv)
-      let decrypted = decipher.update(encryptedText, undefined, 'utf8')
+      // Create decipher using standardized method
+      const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey.slice(0, 32), 'utf8'), iv)
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf8')
       decrypted += decipher.final('utf8')
       
       apiToken = decrypted
