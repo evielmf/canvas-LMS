@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/api'
 import crypto from 'crypto'
+import { 
+  detectCourseConflicts, 
+  detectAssignmentConflicts, 
+  storeConflicts, 
+  autoResolveConflicts,
+  type ConflictDetectionResult 
+} from '@/lib/sync-conflict-detector'
 
 const ENCRYPTION_KEY = process.env.CANVAS_ENCRYPTION_KEY || 'your-32-character-secret-key-here'
 
@@ -25,6 +32,11 @@ interface SyncStats {
   submissions: number
   lastSync: string
   errors: string[]
+  conflicts?: {
+    total: number
+    autoResolved: number
+    requiresUserInput: number
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -97,6 +109,36 @@ export async function POST(request: NextRequest) {
       const courses = await coursesResponse.json()
       console.log(`Found ${courses.length} active courses`)
 
+      // Get existing cached courses for conflict detection
+      const { data: cachedCourses } = await supabase
+        .from('canvas_courses_cache')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // Detect conflicts before clearing cache
+      let courseConflicts: ConflictDetectionResult = { conflicts: [], autoResolvable: [], requiresUserInput: [] }
+      if (cachedCourses && cachedCourses.length > 0) {
+        console.log('🔍 Detecting course conflicts...')
+        courseConflicts = detectCourseConflicts(cachedCourses, courses)
+        
+        if (courseConflicts.conflicts.length > 0) {
+          console.log(`Found ${courseConflicts.conflicts.length} course conflicts`)
+          console.log(`  - Auto-resolvable: ${courseConflicts.autoResolvable.length}`)
+          console.log(`  - Requires user input: ${courseConflicts.requiresUserInput.length}`)
+          
+          // Store conflicts in database
+          await storeConflicts(supabase, user.id, courseConflicts.requiresUserInput)
+          
+          // Auto-resolve safe conflicts
+          const autoResolvedCount = await autoResolveConflicts(supabase, user.id, courseConflicts.autoResolvable)
+          stats.conflicts = {
+            total: courseConflicts.conflicts.length,
+            autoResolved: autoResolvedCount,
+            requiresUserInput: courseConflicts.requiresUserInput.length
+          }
+        }
+      }
+
       // Clear existing courses for this user
       await supabase
         .from('canvas_courses_cache')
@@ -133,6 +175,15 @@ export async function POST(request: NextRequest) {
       // Step 2: Sync Assignments for each course
       console.log('📝 Syncing assignments...')
       
+      // Get existing cached assignments for conflict detection
+      const { data: cachedAssignments } = await supabase
+        .from('canvas_assignments_cache')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // Collect all assignments for conflict detection
+      let allLiveAssignments: any[] = []
+      
       // Clear existing assignments for this user
       await supabase
         .from('canvas_assignments_cache')
@@ -158,6 +209,9 @@ export async function POST(request: NextRequest) {
 
           const assignments = await assignmentsResponse.json()
           console.log(`    Found ${assignments.length} assignments`)
+
+          // Add to all live assignments for conflict detection
+          allLiveAssignments.push(...assignments)
 
           if (assignments.length > 0) {
             const assignmentsToInsert = assignments.map((assignment: any) => ({
@@ -201,6 +255,37 @@ export async function POST(request: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }
 
+      // Detect assignment conflicts after collecting all data
+      if (cachedAssignments && cachedAssignments.length > 0 && allLiveAssignments.length > 0) {
+        console.log('🔍 Detecting assignment conflicts...')
+        const assignmentConflicts = detectAssignmentConflicts(cachedAssignments, allLiveAssignments)
+        
+        if (assignmentConflicts.conflicts.length > 0) {
+          console.log(`Found ${assignmentConflicts.conflicts.length} assignment conflicts`)
+          console.log(`  - Auto-resolvable: ${assignmentConflicts.autoResolvable.length}`)
+          console.log(`  - Requires user input: ${assignmentConflicts.requiresUserInput.length}`)
+          
+          // Store conflicts in database
+          await storeConflicts(supabase, user.id, assignmentConflicts.requiresUserInput)
+          
+          // Auto-resolve safe conflicts
+          const autoResolvedCount = await autoResolveConflicts(supabase, user.id, assignmentConflicts.autoResolvable)
+          
+          // Update stats with combined conflict data
+          if (stats.conflicts) {
+            stats.conflicts.total += assignmentConflicts.conflicts.length
+            stats.conflicts.autoResolved += autoResolvedCount
+            stats.conflicts.requiresUserInput += assignmentConflicts.requiresUserInput.length
+          } else {
+            stats.conflicts = {
+              total: assignmentConflicts.conflicts.length,
+              autoResolved: autoResolvedCount,
+              requiresUserInput: assignmentConflicts.requiresUserInput.length
+            }
+          }
+        }
+      }
+
       stats.assignments = totalAssignments
       stats.submissions = totalSubmissions
 
@@ -221,6 +306,12 @@ export async function POST(request: NextRequest) {
       console.log(`  📚 Courses: ${stats.courses}`)
       console.log(`  📝 Assignments: ${stats.assignments}`)
       console.log(`  ✅ Submissions: ${stats.submissions}`)
+      
+      if (stats.conflicts) {
+        console.log(`  🔍 Conflicts detected: ${stats.conflicts.total}`)
+        console.log(`    - Auto-resolved: ${stats.conflicts.autoResolved}`)
+        console.log(`    - Requires attention: ${stats.conflicts.requiresUserInput}`)
+      }
       
       if (stats.errors.length > 0) {
         console.log(`  ⚠️ Errors: ${stats.errors.length}`)

@@ -21,6 +21,9 @@ import UpcomingReminders from '@/components/dashboard/UpcomingReminders'
 import SyncStatusWidget from '@/components/dashboard/SyncStatusWidget'
 import FloatingActionButton from '@/components/dashboard/FloatingActionButton'
 import PullToRefresh from '@/components/ui/PullToRefresh'
+import StudyConsistencyHeatmap from '@/components/analytics/StudyConsistencyHeatmap'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useCanvasData } from '@/hooks/useCanvasData'
 import { useCanvasToken } from '@/hooks/useCanvasToken'
 import toast from 'react-hot-toast'
@@ -292,6 +295,62 @@ export default function DashboardOverview() {
       {/* Study Reminders with gentle personal assistant vibe */}
       <div className="mt-8 lg:mt-12">
         <UpcomingReminders />
+      </div>
+
+      {/* Analytics Integration - Study Consistency Heatmap */}
+      <div className="mt-8 lg:mt-12">
+        <StudyConsistencyHeatmap assignments={assignments || []} />
+      </div>
+
+      {/* Quick Analytics Preview */}
+      <div className="mt-8 lg:mt-12">
+        <Card className="bg-white/80 backdrop-blur-sm border-lavender-100 shadow-soft hover:shadow-soft-hover transition-all duration-300">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5 text-lavender-600" />
+                <CardTitle className="font-heading text-warm-gray-800">Analytics Preview</CardTitle>
+              </div>
+              <a 
+                href="/dashboard/analytics"
+                className="text-sm text-lavender-500 hover:text-lavender-600 font-medium px-3 py-1 rounded-lg hover:bg-lavender-50 transition-all duration-200"
+              >
+                View full analytics →
+              </a>
+            </div>
+            <CardDescription className="text-warm-gray-600">
+              Quick insights into your study patterns and performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-sage-50 rounded-xl">
+                <div className="text-lg font-semibold text-sage-600">
+                  {mounted ? Math.round(((assignments?.filter(a => a.submission?.submitted_at).length || 0) / Math.max(assignments?.length || 1, 1)) * 100) : 0}%
+                </div>
+                <div className="text-xs text-sage-700">Completion Rate</div>
+              </div>
+              <div className="text-center p-3 bg-lavender-50 rounded-xl">
+                <div className="text-lg font-semibold text-lavender-600">
+                  {averageGrade ? `${averageGrade.toFixed(0)}%` : 'N/A'}
+                </div>
+                <div className="text-xs text-lavender-700">Avg Grade</div>
+              </div>
+              <div className="text-center p-3 bg-peach-50 rounded-xl">
+                <div className="text-lg font-semibold text-peach-600">
+                  {mounted ? (upcomingAssignments?.length || 0) : 0}
+                </div>
+                <div className="text-xs text-peach-700">Due Soon</div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-xl">
+                <div className="text-lg font-semibold text-blue-600">
+                  {courses?.length || 0}
+                </div>
+                <div className="text-xs text-blue-700">Active Courses</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
 

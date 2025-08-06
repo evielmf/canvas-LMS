@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Brain, TrendingUp, Clock, Calendar, Target, Lightbulb, AlertTriangle } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CanvasAssignment } from '@/hooks/useCanvasData'
 
 interface StudySession {
@@ -44,32 +47,46 @@ export default function SmartPatternInsights({
 
   if (!mounted) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6">
-        <div className="animate-soft-pulse">
-          <div className="h-6 bg-sage-100 rounded mb-4"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-sage-50 rounded-xl"></div>
-            ))}
+      <Card className="bg-white/80 backdrop-blur-sm border-sage-100 shadow-soft">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Brain className="h-5 w-5 text-sage-600" />
+            <CardTitle className="font-heading text-warm-gray-800">Smart Pattern Insights</CardTitle>
           </div>
-        </div>
-      </div>
+          <CardDescription>AI-powered analysis of your study behaviors</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-soft-pulse space-y-4">
+            <div className="h-6 bg-sage-100 rounded mb-4"></div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-sage-50 rounded-xl"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6">
-        <h2 className="text-xl font-heading font-semibold text-warm-gray-800 flex items-center mb-4">
-          <Brain className="h-5 w-5 text-sage-600 mr-2" />
-          Smart Insights
-        </h2>
-        <div className="animate-soft-pulse space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-sage-50 rounded-xl"></div>
-          ))}
-        </div>
-      </div>
+      <Card className="bg-white/80 backdrop-blur-sm border-sage-100 shadow-soft">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Brain className="h-5 w-5 text-sage-600" />
+            <CardTitle className="font-heading text-warm-gray-800">Smart Pattern Insights</CardTitle>
+          </div>
+          <CardDescription>AI-powered analysis of your study behaviors</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-soft-pulse space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-sage-50 rounded-xl"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 

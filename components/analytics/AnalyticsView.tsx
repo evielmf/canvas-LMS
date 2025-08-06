@@ -14,10 +14,11 @@ import {
 import { useAnalyticsData } from '@/hooks/useAnalyticsData'
 import { useCanvasData } from '@/hooks/useCanvasData'
 import WeeklyProductivityCard from '@/components/analytics/WeeklyProductivityCard'
-// import CourseHealthGrid from '@/components/analytics/CourseHealthGrid'
+import CourseHealthGrid from '@/components/analytics/CourseHealthGrid'
 import GradeTrendsChart from '@/components/analytics/GradeTrendsChart'
 import TimeAllocationBreakdown from '@/components/analytics/TimeAllocationBreakdown'
 import SmartPatternInsights from '@/components/analytics/SmartPatternInsights'
+import StudyConsistencyHeatmap from '@/components/analytics/StudyConsistencyHeatmap'
 import PullToRefresh from '@/components/ui/PullToRefresh'
 import { toast } from 'react-hot-toast'
 
@@ -137,6 +138,9 @@ export default function AnalyticsView() {
         {/* Analytics Content */}
         {!loading && (
           <div className="space-y-8">
+            {/* Study Consistency Heatmap - New Addition */}
+            <StudyConsistencyHeatmap assignments={assignments || []} />
+
             {/* Weekly Productivity */}
             <WeeklyProductivityCard 
               productivity={weeklyProductivity}
@@ -146,10 +150,10 @@ export default function AnalyticsView() {
             {/* Two-column layout for larger screens */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Course Health Grid */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-warm-gray-100">
-                <h3 className="text-lg font-semibold text-warm-gray-800 mb-4">Course Health</h3>
-                <p className="text-warm-gray-600">Course health component coming soon...</p>
-              </div>
+              <CourseHealthGrid 
+                courseHealth={courseHealth || []}
+                loading={loading}
+              />
 
               {/* Time Allocation Breakdown */}
               <TimeAllocationBreakdown 

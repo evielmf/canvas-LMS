@@ -83,8 +83,8 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Output optimization
-  output: 'standalone',
+  // Comment out output optimization temporarily
+  // output: 'standalone',
 }
 
 module.exports = withPWA(nextConfig)

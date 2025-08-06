@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { X, Play, Pause, Save, Clock } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { useSupabase } from '@/app/providers'
 import { toast } from 'react-hot-toast'
 
