@@ -11,15 +11,23 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/')
-  }
+    if (error) {
+      console.log('Dashboard auth error:', error.message)
+      // If there's an auth error, redirect to home
+      redirect('/')
+    }
 
-  return (
+    if (!user) {
+      redirect('/')
+    }
+
+    return (
     <DashboardClientWrapper>
       <div className="min-h-screen bg-gradient-calm">
         {/* Desktop Sidebar Layout */}
@@ -44,4 +52,8 @@ export default async function DashboardLayout({
       </div>
     </DashboardClientWrapper>
   )
+  } catch (error) {
+    console.error('Dashboard layout error:', error)
+    redirect('/')
+  }
 }

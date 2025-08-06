@@ -25,12 +25,13 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  },
+  // Turbopack configuration (moved from experimental.turbo)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },
@@ -84,13 +85,6 @@ const nextConfig = {
   },
   // Output optimization
   output: 'standalone',
-  // Faster source maps in development
-  ...(process.env.NODE_ENV === 'development' && {
-    webpack: (config, options) => {
-      config.devtool = 'eval-cheap-module-source-map'
-      return config
-    },
-  }),
 }
 
 module.exports = withPWA(nextConfig)

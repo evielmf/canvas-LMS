@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { clearAuthStorage, isAuthError } from '@/utils/auth-helpers'
 
 type SupabaseContext = {
   supabase: SupabaseClient
@@ -35,8 +36,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) {
+          console.log('Auth error:', error.message)
+          // If refresh token is invalid, clear all auth data
+          if (isAuthError(error)) {
+            clearAuthStorage()
+            await supabase.auth.signOut()
+            setUser(null)
+            return
+          }
+        }
+        setUser(user)
+      } catch (error) {
+        console.log('Auth initialization error:', error)
+        // Clear storage on any unexpected error
+        clearAuthStorage()
+        setUser(null)
+      }
     }
 
     getUser()
@@ -44,8 +62,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         // Re-fetch user data to ensure it's authentic
-        const { data: { user } } = await supabase.auth.getUser()
-        setUser(user)
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          setUser(user)
+        } catch (error) {
+          console.log('Auth state change error:', error)
+          setUser(null)
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
       }

@@ -87,8 +87,23 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canvasUrl || !token || !user) {
-      toast.error('Please fill in all required fields')
+    
+    // Debug logging
+    console.log('🔍 Form submission debug:', {
+      canvasUrl: canvasUrl ? 'filled' : 'empty',
+      token: token ? 'filled' : 'empty',
+      user: user ? 'exists' : 'null/undefined',
+      userEmail: user?.email || 'no email'
+    })
+    
+    if (!canvasUrl || !token) {
+      toast.error('Please fill in both Canvas URL and API token')
+      return
+    }
+    
+    if (!user) {
+      toast.error('Authentication error. Please refresh the page and try again.')
+      console.error('User is null/undefined during Canvas setup')
       return
     }
 
@@ -211,6 +226,8 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
             value={canvasUrl}
             onChange={(e) => setCanvasUrl(e.target.value)}
             placeholder="https://yourschool.instructure.com"
+            pattern="https://.*\.instructure\.com/?.*"
+            title="Please enter a valid Canvas URL (e.g., https://yourschool.instructure.com)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-canvas-blue focus:border-transparent text-gray-900 placeholder-gray-500"
             required
           />
@@ -280,6 +297,16 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
                 Your Canvas token is encrypted and stored securely. We only use it to fetch your 
                 course data and never share it with third parties.
               </p>
+              {!user && (
+                <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
+                  ⚠️ Authentication issue detected. User not loaded properly.
+                </div>
+              )}
+              {user && (
+                <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs text-green-800">
+                  ✅ Authenticated as: {user.email}
+                </div>
+              )}
             </div>
           </div>
         </div>
