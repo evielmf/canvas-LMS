@@ -37,7 +37,10 @@ export function useDataPrefetch() {
             queryClient.prefetchQuery({
               queryKey: ['canvas-courses', user.id],
               queryFn: async () => {
-                const response = await fetch('/api/canvas/courses')
+                const response = await fetch('/api/canvas/courses').catch(error => {
+                  console.error('❌ Network error prefetching courses:', error)
+                  throw new Error(`Network error: ${error.message}`)
+                })
                 if (!response.ok) throw new Error('Failed to fetch courses')
                 const data = await response.json()
                 return data.courses || []
@@ -49,7 +52,10 @@ export function useDataPrefetch() {
             queryClient.prefetchQuery({
               queryKey: ['canvas-assignments', user.id],
               queryFn: async () => {
-                const response = await fetch('/api/canvas/assignments')
+                const response = await fetch('/api/canvas/assignments').catch(error => {
+                  console.error('❌ Network error prefetching assignments:', error)
+                  throw new Error(`Network error: ${error.message}`)
+                })
                 if (!response.ok) throw new Error('Failed to fetch assignments')
                 const data = await response.json()
                 return data.assignments || []
@@ -61,7 +67,10 @@ export function useDataPrefetch() {
             queryClient.prefetchQuery({
               queryKey: ['canvas-grades', user.id],
               queryFn: async () => {
-                const response = await fetch('/api/canvas/grades')
+                const response = await fetch('/api/canvas/grades').catch(error => {
+                  console.error('❌ Network error prefetching grades:', error)
+                  throw new Error(`Network error: ${error.message}`)
+                })
                 if (!response.ok) throw new Error('Failed to fetch grades')
                 const data = await response.json()
                 return data.grades || []

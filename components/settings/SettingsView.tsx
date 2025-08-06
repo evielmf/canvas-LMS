@@ -18,6 +18,7 @@ import {
 import toast from 'react-hot-toast'
 import crypto from 'crypto'
 import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
+import CourseNameMappingManager from '@/components/settings/CourseNameMappingManager'
 
 interface CanvasToken {
   canvas_url: string
@@ -116,6 +117,9 @@ export default function SettingsView() {
           canvasUrl: url,
           canvasToken: token, // Fixed parameter name to match API
         }),
+      }).catch(error => {
+        console.error('❌ Network error testing Canvas connection:', error)
+        throw new Error(`Network error: ${error.message}`)
       })
 
       const data = await response.json()
@@ -244,6 +248,10 @@ export default function SettingsView() {
           canvasUrl: normalizedUrl,
           canvasToken: newToken,
         }),
+      }).catch(error => {
+        toast.dismiss(saveToastId)
+        console.error('❌ Network error saving Canvas settings:', error)
+        throw new Error(`Network error: ${error.message}`)
       })
 
       const saveData = await saveResponse.json()
@@ -550,6 +558,11 @@ export default function SettingsView() {
                         </ul>
                       </div>
                     </form>
+
+                    {/* Course Name Mappings Section */}
+                    <div className="border-t border-gray-200 pt-6 mt-6">
+                      <CourseNameMappingManager />
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">

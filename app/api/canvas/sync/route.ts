@@ -73,12 +73,22 @@ export async function POST(request: NextRequest) {
     const coursesResponse = await fetch(`${canvas_url}/api/v1/courses?enrollment_state=active&per_page=100`, {
       headers,
       signal: coursesController.signal
+    }).catch(error => {
+      clearTimeout(coursesTimeoutId)
+      if (error.name === 'AbortError') {
+        console.error('❌ Courses fetch timed out after 30 seconds')
+        throw new Error('Canvas courses request timed out')
+      }
+      console.error('❌ Network error fetching courses:', error)
+      throw new Error(`Network error fetching courses: ${error.message}`)
     })
     
     clearTimeout(coursesTimeoutId)
 
     if (!coursesResponse.ok) {
-      throw new Error(`Failed to fetch courses: ${coursesResponse.status}`)
+      const errorText = await coursesResponse.text().catch(() => 'Unknown error')
+      console.error(`❌ Canvas courses API error: ${coursesResponse.status} - ${errorText}`)
+      throw new Error(`Failed to fetch courses: ${coursesResponse.status} - ${errorText}`)
     }
 
     const courses = await coursesResponse.json()
@@ -152,7 +162,15 @@ export async function POST(request: NextRequest) {
         const assignmentsResponse = await fetch(
           `${canvas_url}/api/v1/courses/${course.id}/assignments?per_page=100&include[]=submission`,
           { headers, signal: assignmentsController.signal }
-        )
+        ).catch(error => {
+          clearTimeout(assignmentsTimeoutId)
+          if (error.name === 'AbortError') {
+            console.error(`❌ Assignments fetch for course ${course.id} timed out`)
+            throw new Error(`Assignments request for course ${course.id} timed out`)
+          }
+          console.error(`❌ Network error fetching assignments for course ${course.id}:`, error)
+          throw error
+        })
         
         clearTimeout(assignmentsTimeoutId)
 

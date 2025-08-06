@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSupabase } from '@/app/providers'
 import { Bell, Plus, X, Calendar, Clock } from 'lucide-react'
 import { format } from 'date-fns'
@@ -23,14 +23,7 @@ export default function UpcomingReminders() {
   const [mounted, setMounted] = useState(false)
   const { user, supabase } = useSupabase()
 
-  useEffect(() => {
-    setMounted(true)
-    if (user) {
-      loadReminders()
-    }
-  }, [user])
-
-  const loadReminders = async () => {
+  const loadReminders = useCallback(async () => {
     try {
       // Debug logging
       console.log('Loading reminders for user:', user?.id)
@@ -72,7 +65,17 @@ export default function UpcomingReminders() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, supabase, mounted])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (user && mounted) {
+      loadReminders()
+    }
+  }, [user, mounted, loadReminders])
 
   const deleteReminder = async (id: string) => {
     try {

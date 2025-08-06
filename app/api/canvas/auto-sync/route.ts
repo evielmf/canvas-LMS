@@ -100,10 +100,15 @@ export async function POST(request: NextRequest) {
       const coursesResponse = await fetch(
         `${baseUrl}/api/v1/courses?enrollment_state=active&per_page=100&include[]=total_scores`,
         { headers }
-      )
+      ).catch(error => {
+        console.error('❌ Failed to fetch courses from Canvas:', error)
+        throw new Error(`Network error fetching courses: ${error.message}`)
+      })
 
       if (!coursesResponse.ok) {
-        throw new Error(`Canvas courses API returned ${coursesResponse.status}`)
+        const errorText = await coursesResponse.text().catch(() => 'Unknown error')
+        console.error(`❌ Canvas courses API error: ${coursesResponse.status} - ${errorText}`)
+        throw new Error(`Canvas courses API returned ${coursesResponse.status}: ${errorText}`)
       }
 
       const courses = await coursesResponse.json()
@@ -200,10 +205,14 @@ export async function POST(request: NextRequest) {
           const assignmentsResponse = await fetch(
             `${baseUrl}/api/v1/courses/${course.id}/assignments?per_page=100&include[]=submission`,
             { headers }
-          )
+          ).catch(error => {
+            console.error(`❌ Network error fetching assignments for course ${course.id}:`, error)
+            throw error
+          })
 
           if (!assignmentsResponse.ok) {
-            console.warn(`Failed to fetch assignments for course ${course.id}: ${assignmentsResponse.status}`)
+            const errorText = await assignmentsResponse.text().catch(() => 'Unknown error')
+            console.warn(`❌ Failed to fetch assignments for course ${course.id}: ${assignmentsResponse.status} - ${errorText}`)
             continue
           }
 

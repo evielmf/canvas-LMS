@@ -103,6 +103,23 @@ export default function TimeAllocationBreakdown({
     })
   })
 
+  // Convert hex colors to Tailwind classes
+  const getColorClass = (color: string) => {
+    const colorMap: {[key: string]: string} = {
+      '#3B82F6': 'bg-blue-500',
+      '#10B981': 'bg-emerald-500',
+      '#F59E0B': 'bg-amber-500',
+      '#EF4444': 'bg-red-500',
+      '#8B5CF6': 'bg-violet-500',
+      '#06B6D4': 'bg-cyan-500',
+      '#84CC16': 'bg-lime-500',
+      '#F97316': 'bg-orange-500',
+      '#EC4899': 'bg-pink-500',
+      '#6366F1': 'bg-indigo-500'
+    }
+    return colorMap[color] || 'bg-gray-500'
+  }
+
   // Convert to chart data with colors
   const colors = [
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -231,8 +248,7 @@ export default function TimeAllocationBreakdown({
             <div key={course.courseName} className="flex items-center justify-between">
               <div className="flex items-center">
                 <div 
-                  className="w-4 h-4 rounded-full mr-3 flex-shrink-0"
-                  style={{ backgroundColor: course.color }}
+                  className={`w-4 h-4 rounded-full mr-3 flex-shrink-0 ${getColorClass(course.color)}`}
                 />
                 <div>
                   <p className="font-medium text-warm-gray-800 text-sm">

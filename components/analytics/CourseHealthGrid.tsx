@@ -126,9 +126,9 @@ export default function CourseHealthGrid({ courseHealth, loading }: CourseHealth
                 </span>
               </div>
               <div className="w-full bg-warm-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-500 ${getHealthColor(course.healthScore)}`}
-                  style={{ width: `${Math.max(course.healthScore, 2)}%` }}
+                <Progress 
+                  value={Math.max(course.healthScore, 2)} 
+                  className={`h-2 ${getHealthColor(course.healthScore)}`}
                 />
               </div>
             </div>

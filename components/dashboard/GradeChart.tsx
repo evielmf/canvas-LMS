@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
-
+import { Progress } from '@/components/ui/progress'
 import { CanvasGrade } from '@/hooks/useCanvasData'
 
 interface GradeChartProps {
@@ -104,14 +104,14 @@ export default function GradeChart({ grades }: GradeChartProps) {
               </div>
               {/* Simple progress bar */}
               <div className="w-full bg-warm-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    grade.percentage >= 90 ? 'bg-green-500' :
-                    grade.percentage >= 80 ? 'bg-sage-500' :
-                    grade.percentage >= 70 ? 'bg-orange-500' :
-                    'bg-red-500'
+                <Progress 
+                  value={Math.min(grade.percentage, 100)}
+                  className={`h-2 ${
+                    grade.percentage >= 90 ? 'text-green-500' :
+                    grade.percentage >= 80 ? 'text-sage-500' :
+                    grade.percentage >= 70 ? 'text-orange-500' :
+                    'text-red-500'
                   }`}
-                  style={{ width: `${Math.min(grade.percentage, 100)}%` }}
                 />
               </div>
             </div>

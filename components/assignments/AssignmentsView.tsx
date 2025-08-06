@@ -20,6 +20,7 @@ import BottomSheet from '@/components/ui/BottomSheet'
 import PullToRefresh from '@/components/ui/PullToRefresh'
 import { AssignmentCardSkeleton } from '@/components/ui/FastLoading'
 import { AssignmentsLoading } from '@/components/ui/OptimizedLoading'
+import PerformanceMonitor from '@/components/ui/PerformanceMonitor'
 import toast from 'react-hot-toast'
 
 const filterOptions = [
@@ -347,6 +348,9 @@ export default function AssignmentsView() {
       <FloatingActionButton
         onSync={handleSyncAction}
       />
+
+      {/* Performance Monitor (Development) */}
+      {process.env.NODE_ENV === 'development' && <PerformanceMonitor />}
     </PullToRefresh>
   )
 }

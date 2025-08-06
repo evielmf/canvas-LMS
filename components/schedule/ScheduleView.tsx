@@ -26,6 +26,43 @@ const COLORS = [
   '#EC4899', '#6366F1', '#14B8A6', '#F43F5E'
 ]
 
+// Color mapping utility
+const getColorClass = (color: string) => {
+  const colorMap: {[key: string]: string} = {
+    '#3B82F6': 'bg-blue-500',
+    '#10B981': 'bg-emerald-500', 
+    '#F59E0B': 'bg-amber-500',
+    '#EF4444': 'bg-red-500',
+    '#8B5CF6': 'bg-violet-500',
+    '#06B6D4': 'bg-cyan-500',
+    '#F97316': 'bg-orange-500',
+    '#84CC16': 'bg-lime-500',
+    '#EC4899': 'bg-pink-500',
+    '#6366F1': 'bg-indigo-500',
+    '#14B8A6': 'bg-teal-500',
+    '#F43F5E': 'bg-rose-500'
+  }
+  return colorMap[color] || 'bg-gray-500'
+}
+
+const getBorderColorClass = (color: string) => {
+  const colorMap: {[key: string]: string} = {
+    '#3B82F6': 'border-blue-500',
+    '#10B981': 'border-emerald-500', 
+    '#F59E0B': 'border-amber-500',
+    '#EF4444': 'border-red-500',
+    '#8B5CF6': 'border-violet-500',
+    '#06B6D4': 'border-cyan-500',
+    '#F97316': 'border-orange-500',
+    '#84CC16': 'border-lime-500',
+    '#EC4899': 'border-pink-500',
+    '#6366F1': 'border-indigo-500',
+    '#14B8A6': 'border-teal-500',
+    '#F43F5E': 'border-rose-500'
+  }
+  return colorMap[color] || 'border-gray-500'
+}
+
 export default function ScheduleView() {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -361,8 +398,7 @@ export default function ScheduleView() {
                   .map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 p-4 bg-sage-25 rounded-xl hover:bg-sage-50 transition-all duration-200">
                       <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: item.color }}
+                        className={`w-3 h-3 rounded-full flex-shrink-0 ${getColorClass(item.color)}`}
                         aria-hidden="true"
                       />
                       <div className="flex-1 min-w-0">
@@ -485,8 +521,7 @@ function ScheduleItemCard({ item, onEdit, onDelete }: ScheduleItemCardProps) {
 
   return (
     <div 
-      className="p-3 rounded-xl border-l-4 bg-white/90 backdrop-blur-sm shadow-soft hover:shadow-soft-hover transition-all duration-200 group schedule-card"
-      style={{ borderLeftColor: item.color }}
+      className={`p-3 rounded-xl border-l-4 bg-white/90 backdrop-blur-sm shadow-soft hover:shadow-soft-hover transition-all duration-200 group schedule-card ${getBorderColorClass(item.color)}`}
       aria-label={`Schedule item: ${item.title}`}
     >
       <div className="flex items-start justify-between">
@@ -652,10 +687,9 @@ function ScheduleFormModal({ item, onClose, onSave }: ScheduleFormModalProps) {
                     key={colorOption}
                     type="button"
                     onClick={() => setColor(colorOption)}
-                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                    className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${getColorClass(colorOption)} ${
                       color === colorOption ? 'border-warm-gray-400 scale-110' : 'border-warm-gray-200'
                     }`}
-                    style={{ backgroundColor: colorOption }}
                     aria-label={`Select color ${colorOption}`}
                   />
                 ))}

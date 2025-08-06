@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useCanvasData } from '@/hooks/useCanvasData'
 import { GradesLoading } from '@/components/ui/OptimizedLoading'
+import { useCourseNameMapper } from '@/utils/course-name-mapper'
+import { useCourseNameMappings } from '@/hooks/useCourseNameMappings'
 import { 
   BarChart3,
   TrendingUp,
@@ -10,10 +12,13 @@ import {
   BookOpen,
   Filter,
   Search,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  AlertCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import CourseNameMappingManager from '@/components/settings/CourseNameMappingManager'
 
 const filterOptions = [
   { value: 'all', label: 'All Courses' },
@@ -24,27 +29,38 @@ const COLORS = ['#0374B5', '#FC5E13', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
 
 export default function GradesView() {
   const { assignments, courses, grades, loading } = useCanvasData()
+  const { mapper } = useCourseNameMapper()
+  const { mappings } = useCourseNameMappings()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedCourse, setSelectedCourse] = useState('')
+  const [showMappingManager, setShowMappingManager] = useState(false)
 
   // Ensure grades is always an array
   const safeGrades = grades || []
 
-  // Process grades by course
-  const gradesByCourse = safeGrades.reduce((acc, grade) => {
-    const courseId = grade.course_name || 'Unknown Course'
-    if (!acc[courseId]) {
-      acc[courseId] = {
-        courseName: grade.course_name || 'Unknown Course',
+  // Transform grades with proper course names using the mapper
+  const gradesWithMappedNames = mapper.transformWithMappings(safeGrades)
+
+  // Check if there are any unknown courses that need mapping
+  const unknownCoursesExist = safeGrades.some(grade => 
+    mapper.isUnknownCourse(grade.course_name)
+  )
+
+  // Process grades by course using mapped names
+  const gradesByCourse = gradesWithMappedNames.reduce((acc, grade) => {
+    const courseName = grade.course_name || 'Unknown Course'
+    if (!acc[courseName]) {
+      acc[courseName] = {
+        courseName: courseName,
         grades: [],
         totalPoints: 0,
         earnedPoints: 0,
       }
     }
-    acc[courseId].grades.push(grade)
-    acc[courseId].totalPoints += grade.points_possible || 0
-    acc[courseId].earnedPoints += grade.score || 0
+    acc[courseName].grades.push(grade)
+    acc[courseName].totalPoints += grade.points_possible || 0
+    acc[courseName].earnedPoints += grade.score || 0
     return acc
   }, {} as Record<string, any>)
 
@@ -59,8 +75,8 @@ export default function GradesView() {
     }
   })
 
-  // Grade distribution
-  const gradeDistribution = safeGrades.reduce((acc, grade) => {
+  // Grade distribution using mapped names
+  const gradeDistribution = gradesWithMappedNames.reduce((acc, grade) => {
     const pointsPossible = grade.points_possible || 0
     const score = grade.score || 0
     const percentage = pointsPossible > 0 ? (score / pointsPossible) * 100 : 0
@@ -80,19 +96,19 @@ export default function GradesView() {
     { name: 'F (0-59%)', value: gradeDistribution.F, color: '#EF4444' },
   ].filter(item => item.value > 0)
 
-  // Recent grades
-  const recentGrades = safeGrades.slice(0, 10)
+  // Recent grades with mapped names
+  const recentGrades = gradesWithMappedNames.slice(0, 10)
 
-  // Overall stats
-  const overallAverage = safeGrades.length ? 
-    safeGrades.reduce((sum, grade) => {
+  // Overall stats using mapped data
+  const overallAverage = gradesWithMappedNames.length ? 
+    gradesWithMappedNames.reduce((sum, grade) => {
       const pointsPossible = grade.points_possible || 0
       const score = grade.score || 0
       const percentage = pointsPossible > 0 ? (score / pointsPossible) * 100 : 0
       return sum + percentage
-    }, 0) / safeGrades.length : 0
+    }, 0) / gradesWithMappedNames.length : 0
 
-  const filteredGrades = safeGrades.filter(grade => {
+  const filteredGrades = gradesWithMappedNames.filter(grade => {
     const assignmentName = grade.assignment_name || ''
     const courseName = grade.course_name || ''
     
@@ -114,10 +130,32 @@ export default function GradesView() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Grades & Progress</h1>
-        <p className="text-gray-600">
-          Track your academic performance across all courses.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Grades & Progress</h1>
+            <p className="text-gray-600">
+              Track your academic performance across all courses.
+            </p>
+          </div>
+          
+          {/* Course Name Mapping Button */}
+          <div className="flex items-center space-x-3">
+            {unknownCoursesExist && (
+              <div className="flex items-center bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                <AlertCircle className="h-4 w-4 text-orange-500 mr-2" />
+                <span className="text-sm text-orange-700">Unknown courses detected</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowMappingManager(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              title="Map course names for better organization"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Map Course Names
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -139,7 +177,7 @@ export default function GradesView() {
             <BookOpen className="h-8 w-8 text-green-500 mr-3" />
             <div>
               <div className="text-sm font-medium text-gray-500">Total Grades</div>
-              <div className="text-2xl font-bold text-gray-900">{safeGrades.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{gradesWithMappedNames.length}</div>
             </div>
           </div>
         </div>
@@ -340,6 +378,15 @@ export default function GradesView() {
           </div>
         )}
       </div>
+
+      {/* Course Name Mapping Manager Modal */}
+      {showMappingManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <CourseNameMappingManager onClose={() => setShowMappingManager(false)} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

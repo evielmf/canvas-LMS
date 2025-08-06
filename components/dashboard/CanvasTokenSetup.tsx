@@ -29,6 +29,9 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
           canvasUrl: url,
           canvasToken: token,
         }),
+      }).catch(error => {
+        console.error('❌ Network error testing Canvas connection:', error)
+        throw new Error(`Network error: ${error.message}`)
       })
 
       const data = await response.json()
@@ -133,6 +136,10 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
           canvasUrl: normalizedUrl,
           canvasToken: token,
         }),
+      }).catch(error => {
+        toast.dismiss(testToastId)
+        console.error('❌ Network error during Canvas setup:', error)
+        throw new Error(`Network error: ${error.message}`)
       })
 
       const data = await response.json()
@@ -166,13 +173,18 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
       
       // Try to fetch and cache courses immediately
       try {
-        const coursesResponse = await fetch('/api/canvas/courses')
+        const coursesResponse = await fetch('/api/canvas/courses').catch(error => {
+          console.error('❌ Network error fetching courses after setup:', error)
+          throw error
+        })
         if (coursesResponse.ok) {
           console.log('✅ Successfully fetched courses after token setup')
           toast.success('📚 Course data synced successfully!', { duration: 3000 })
+        } else {
+          console.log('⚠️ Could not fetch courses: HTTP', coursesResponse.status)
         }
       } catch (courseError) {
-        console.log('⚠️ Could not fetch courses immediately, but token was saved')
+        console.log('⚠️ Could not fetch courses immediately, but token was saved:', courseError)
       }
 
       // Show integration active message

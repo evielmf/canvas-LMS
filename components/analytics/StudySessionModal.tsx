@@ -87,12 +87,15 @@ export default function StudySessionModal({
             <Clock className="h-5 w-5 text-sage-600 mr-2" />
             Log Study Session
           </h2>
-          <button
+          <Button
             onClick={onClose}
+            variant="ghost"
+            size="sm"
             className="p-2 text-warm-gray-400 hover:text-warm-gray-600 rounded-lg hover:bg-warm-gray-100"
+            aria-label="Close modal"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,6 +108,7 @@ export default function StudySessionModal({
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
               className="w-full px-3 py-2 border border-warm-gray-300 rounded-lg focus:ring-2 focus:ring-sage-500 focus:border-sage-500"
+              aria-label="Select a course"
               required
             >
               <option value="">Select a course</option>
@@ -143,6 +147,7 @@ export default function StudySessionModal({
               value={activityType}
               onChange={(e) => setActivityType(e.target.value)}
               className="w-full px-3 py-2 border border-warm-gray-300 rounded-lg focus:ring-2 focus:ring-sage-500 focus:border-sage-500"
+              aria-label="Select activity type"
             >
               <option value="study">Study Session</option>
               <option value="assignment">Assignment Work</option>
@@ -166,6 +171,7 @@ export default function StudySessionModal({
                 value={duration}
                 onChange={(e) => setDuration(parseInt(e.target.value))}
                 className="flex-1"
+                aria-label="Duration in minutes"
               />
               <span className="text-sm font-medium text-warm-gray-700 w-16">
                 {duration}m
