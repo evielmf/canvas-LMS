@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useSupabase } from '@/app/providers'
 
 export interface CanvasCourse {
@@ -39,16 +39,103 @@ export interface CanvasGrade {
   graded_at: string
 }
 
+// Optimized parallel data fetching
 export function useCanvasData() {
   const { user } = useSupabase()
 
-  // Fetch courses - cache-first approach
-  const { 
-    data: coursesData, 
-    isLoading: coursesLoading, 
-    error: coursesError,
-    refetch: refetchCourses 
-  } = useQuery({
+  // Use useQueries for parallel fetching
+  const queries = useQueries({
+    queries: [
+      {
+        queryKey: ['canvas-courses', user?.id],
+        queryFn: async () => {
+          const response = await fetch('/api/canvas/courses')
+          if (!response.ok) {
+            throw new Error('Failed to fetch courses')
+          }
+          const data = await response.json()
+          return data.courses || []
+        },
+        enabled: !!user,
+        staleTime: 30 * 60 * 1000, // 30 minutes
+        gcTime: 60 * 60 * 1000, // 1 hour
+        refetchOnWindowFocus: false,
+        refetchInterval: false,
+        refetchOnMount: 'always', // Always check cache first
+        refetchOnReconnect: false,
+        retry: 2,
+      },
+      {
+        queryKey: ['canvas-assignments', user?.id],
+        queryFn: async () => {
+          const response = await fetch('/api/canvas/assignments')
+          if (!response.ok) {
+            throw new Error('Failed to fetch assignments')
+          }
+          const data = await response.json()
+          return data.assignments || []
+        },
+        enabled: !!user,
+        staleTime: 15 * 60 * 1000, // 15 minutes
+        gcTime: 60 * 60 * 1000, // 1 hour
+        refetchOnWindowFocus: false,
+        refetchInterval: false,
+        refetchOnMount: 'always',
+        refetchOnReconnect: false,
+        retry: 2,
+      },
+      {
+        queryKey: ['canvas-grades', user?.id],
+        queryFn: async () => {
+          const response = await fetch('/api/canvas/grades')
+          if (!response.ok) {
+            throw new Error('Failed to fetch grades')
+          }
+          const data = await response.json()
+          return data.grades || []
+        },
+        enabled: !!user,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        gcTime: 30 * 60 * 1000, // 30 minutes
+        refetchOnWindowFocus: false,
+        refetchInterval: false,
+        refetchOnMount: 'always',
+        refetchOnReconnect: false,
+        retry: 2,
+      },
+    ],
+  })
+
+  const [coursesQuery, assignmentsQuery, gradesQuery] = queries
+
+  const loading = coursesQuery.isLoading || assignmentsQuery.isLoading || gradesQuery.isLoading
+  const error = coursesQuery.error || assignmentsQuery.error || gradesQuery.error
+
+  const refetchAll = () => {
+    coursesQuery.refetch()
+    assignmentsQuery.refetch()
+    gradesQuery.refetch()
+  }
+
+  return {
+    courses: (coursesQuery.data as CanvasCourse[]) || [],
+    assignments: (assignmentsQuery.data as CanvasAssignment[]) || [],
+    grades: (gradesQuery.data as CanvasGrade[]) || [],
+    loading,
+    error,
+    refetch: refetchAll,
+    // Individual query states for more granular control
+    coursesLoading: coursesQuery.isLoading,
+    assignmentsLoading: assignmentsQuery.isLoading,
+    gradesLoading: gradesQuery.isLoading,
+  }
+}
+
+// Optimized hook for specific data types when you only need one type
+export function useCanvasCourses() {
+  const { user } = useSupabase()
+  
+  return useQuery({
     queryKey: ['canvas-courses', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/canvas/courses')
@@ -59,22 +146,17 @@ export function useCanvasData() {
       return data.courses || []
     },
     enabled: !!user,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - data is cached in database
-    gcTime: 48 * 60 * 60 * 1000, // 48 hours garbage collection
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchInterval: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retry: 1, // Reduced retries since data is cached
+    refetchOnMount: 'always',
   })
+}
 
-  // Fetch assignments - cache-first approach
-  const { 
-    data: assignmentsData, 
-    isLoading: assignmentsLoading, 
-    error: assignmentsError,
-    refetch: refetchAssignments 
-  } = useQuery({
+export function useCanvasAssignments() {
+  const { user } = useSupabase()
+  
+  return useQuery({
     queryKey: ['canvas-assignments', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/canvas/assignments')
@@ -85,22 +167,17 @@ export function useCanvasData() {
       return data.assignments || []
     },
     enabled: !!user,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - data is cached in database
-    gcTime: 48 * 60 * 60 * 1000, // 48 hours garbage collection
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchInterval: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retry: 1, // Reduced retries since data is cached
+    refetchOnMount: 'always',
   })
+}
 
-  // Fetch grades - cache-first approach
-  const { 
-    data: gradesData, 
-    isLoading: gradesLoading, 
-    error: gradesError,
-    refetch: refetchGrades 
-  } = useQuery({
+export function useCanvasGrades() {
+  const { user } = useSupabase()
+  
+  return useQuery({
     queryKey: ['canvas-grades', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/canvas/grades')
@@ -111,30 +188,9 @@ export function useCanvasData() {
       return data.grades || []
     },
     enabled: !!user,
-    staleTime: 6 * 60 * 60 * 1000, // 6 hours - grades change more frequently
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours garbage collection
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchInterval: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retry: 1, // Reduced retries since data is cached
+    refetchOnMount: 'always',
   })
-
-  const loading = coursesLoading || assignmentsLoading || gradesLoading
-  const error = coursesError || assignmentsError || gradesError
-
-  const refetchAll = () => {
-    refetchCourses()
-    refetchAssignments()
-    refetchGrades()
-  }
-
-  return {
-    courses: coursesData as CanvasCourse[],
-    assignments: assignmentsData as CanvasAssignment[],
-    grades: gradesData as CanvasGrade[],
-    loading,
-    error,
-    refetch: refetchAll,
-  }
 }

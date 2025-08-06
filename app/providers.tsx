@@ -16,8 +16,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: 15 * 60 * 1000, // 15 minutes - longer to reduce API calls
+        gcTime: 30 * 60 * 1000, // 30 minutes - keep in memory longer
+        refetchOnWindowFocus: false, // Don't refetch on focus
+        refetchOnMount: 'always', // Always check cache first
+        refetchOnReconnect: false,
+        retry: 2, // Reasonable retry count
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      },
+      mutations: {
+        retry: 1,
       },
     },
   }))
@@ -33,8 +41,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Re-fetch user data to ensure it's authentic
+        const { data: { user } } = await supabase.auth.getUser()
+        setUser(user)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()

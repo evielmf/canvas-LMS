@@ -2,26 +2,42 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useUniversalPrefetch } from '@/hooks/useUniversalPrefetch'
 import { 
   Home, 
   Calendar, 
   BookOpen, 
   BarChart3, 
-  Settings,
-  User as UserIcon,
   TrendingUp
 } from 'lucide-react'
 
 export default function MobileBottomNav() {
   const pathname = usePathname()
+  const { 
+    prefetchAssignments, 
+    prefetchGrades, 
+    prefetchSchedule, 
+    prefetchAnalytics,
+    prefetchDashboard 
+  } = useUniversalPrefetch()
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Assignments', href: '/dashboard/assignments', icon: BookOpen },
-    { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar },
-    { name: 'Grades', href: '/dashboard/grades', icon: BarChart3 },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
+    { name: 'Dashboard', href: '/dashboard', icon: Home, prefetchFn: prefetchDashboard },
+    { name: 'Assignments', href: '/dashboard/assignments', icon: BookOpen, prefetchFn: prefetchAssignments },
+    { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar, prefetchFn: prefetchSchedule },
+    { name: 'Grades', href: '/dashboard/grades', icon: BarChart3, prefetchFn: prefetchGrades },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp, prefetchFn: prefetchAnalytics },
   ]
+
+  // Safe prefetch handler
+  const handlePrefetch = (prefetchFn: () => void) => {
+    try {
+      prefetchFn()
+    } catch (error) {
+      // Silently handle prefetch errors
+      console.log('Prefetch error:', error)
+    }
+  }
 
   return (
     <>
@@ -36,6 +52,8 @@ export default function MobileBottomNav() {
               <Link
                 key={item.name}
                 href={item.href}
+                onTouchStart={() => handlePrefetch(item.prefetchFn)}
+                onMouseEnter={() => handlePrefetch(item.prefetchFn)}
                 className={`flex flex-col items-center justify-center space-y-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-0 flex-1 ${
                   isActive
                     ? 'text-sage-600 bg-sage-50'

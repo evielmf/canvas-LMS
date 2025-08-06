@@ -17,7 +17,7 @@ export default function AuthPage() {
     // Test Supabase connection
     const testConnection = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
+        const { data, error } = await supabase.auth.getUser()
         setSupabaseConnected(true)
         console.log('Supabase connection successful')
       } catch (error) {
@@ -148,7 +148,7 @@ export default function AuthPage() {
       <section id="hero" className="px-[5%] py-16 md:py-24 lg:py-28 bg-black relative overflow-hidden">
         {/* Floating background elements */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl float-animation"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-xl float-animation" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-xl float-animation float-animation-delayed"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-green-500/5 rounded-full blur-2xl"></div>
         
         <div className="container relative z-10">

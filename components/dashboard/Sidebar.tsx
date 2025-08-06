@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User } from '@supabase/supabase-js'
 import { useSupabase } from '@/app/providers'
+import { useUniversalPrefetch } from '@/hooks/useUniversalPrefetch'
 import { 
   Home, 
   Calendar, 
@@ -31,6 +32,13 @@ export default function Sidebar({ user }: SidebarProps) {
     const { supabase } = useSupabase()
     const router = useRouter()
     const pathname = usePathname()
+    const {
+      prefetchAssignments,
+      prefetchGrades,
+      prefetchSchedule,
+      prefetchAnalytics,
+      prefetchDashboard
+    } = useUniversalPrefetch()
 
     // Auto-collapse on mobile
     useEffect(() => {
@@ -56,12 +64,48 @@ export default function Sidebar({ user }: SidebarProps) {
     }
 
     const navigation = [
-        { name: 'Home', href: '/dashboard', icon: Home, tooltip: 'Dashboard Overview' },
-        { name: 'Assignments', href: '/dashboard/assignments', icon: BookOpen, tooltip: 'View Assignments' },
-        { name: 'Calendar', href: '/dashboard/schedule', icon: Calendar, tooltip: 'Study Schedule' },
-        { name: 'Grades', href: '/dashboard/grades', icon: BarChart3, tooltip: 'Grade Progress' },
-        { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp, tooltip: 'Performance Analytics' },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings, tooltip: 'Account Settings' },
+        { 
+          name: 'Home', 
+          href: '/dashboard', 
+          icon: Home, 
+          tooltip: 'Dashboard Overview',
+          onPrefetch: prefetchDashboard
+        },
+        { 
+          name: 'Assignments', 
+          href: '/dashboard/assignments', 
+          icon: BookOpen, 
+          tooltip: 'View Assignments',
+          onPrefetch: prefetchAssignments
+        },
+        { 
+          name: 'Calendar', 
+          href: '/dashboard/schedule', 
+          icon: Calendar, 
+          tooltip: 'Study Schedule',
+          onPrefetch: prefetchSchedule
+        },
+        { 
+          name: 'Grades', 
+          href: '/dashboard/grades', 
+          icon: BarChart3, 
+          tooltip: 'Grade Progress',
+          onPrefetch: prefetchGrades
+        },
+        { 
+          name: 'Analytics', 
+          href: '/dashboard/analytics', 
+          icon: TrendingUp, 
+          tooltip: 'Performance Analytics',
+          onPrefetch: prefetchAnalytics
+        },
+        { 
+          name: 'Settings', 
+          href: '/dashboard/settings', 
+          icon: Settings, 
+          tooltip: 'Account Settings',
+          onPrefetch: () => {} // No prefetch needed for settings
+        },
     ]
 
     const isActive = (href: string) => {
@@ -181,6 +225,10 @@ export default function Sidebar({ user }: SidebarProps) {
                                 <div key={item.name} className="relative group">
                                     <a
                                         href={item.href}
+                                        onMouseEnter={() => {
+                                            // Prefetch on hover for instant loading
+                                            item.onPrefetch()
+                                        }}
                                         className={`flex items-center ${collapsed ? 'px-4 py-4' : 'px-3 py-2.5'} text-sm font-medium rounded-xl transition-all duration-200 ${
                                             active
                                                 ? 'bg-sage-100 text-sage-700 shadow-gentle'

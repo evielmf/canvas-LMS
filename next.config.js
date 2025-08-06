@@ -22,18 +22,27 @@ const nextConfig = {
   images: {
     domains: ['lh3.googleusercontent.com'],
   },
-  // Improve chunk loading reliability
+  // Performance optimizations
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
-  // Better webpack configuration
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
+  // Webpack optimizations
+  webpack: (config, { isServer, dev }) => {
+    // Optimize bundle splits
+    if (!isServer && !dev) {
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {
           default: {
-            minChunks: 1,
+            minChunks: 2,
             priority: -20,
             reuseExistingChunk: true,
           },
@@ -43,11 +52,45 @@ const nextConfig = {
             priority: -10,
             chunks: 'all',
           },
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react',
+            priority: 20,
+            chunks: 'all',
+          },
+          libs: {
+            test: /[\\/]node_modules[\\/](framer-motion|date-fns|lucide-react)[\\/]/,
+            name: 'libs',
+            priority: 15,
+            chunks: 'all',
+          },
         },
       }
     }
+    
+    // Faster builds in development
+    if (dev) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      }
+    }
+    
     return config
   },
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Output optimization
+  output: 'standalone',
+  // Faster source maps in development
+  ...(process.env.NODE_ENV === 'development' && {
+    webpack: (config, options) => {
+      config.devtool = 'eval-cheap-module-source-map'
+      return config
+    },
+  }),
 }
 
 module.exports = withPWA(nextConfig)
