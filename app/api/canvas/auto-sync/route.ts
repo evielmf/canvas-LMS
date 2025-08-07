@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
 
       // Collect all assignments for conflict detection
-      let allLiveAssignments: any[] = []
+      const allLiveAssignments: any[] = []
       
       // Clear existing assignments for this user
       await supabase

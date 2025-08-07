@@ -1,25 +1,12 @@
 'use client'
 
-import { useUniversalPrefetch } from '@/hooks/useUniversalPrefetch'
-import { useEffect } from 'react'
-
 interface DashboardClientWrapperProps {
   children: React.ReactNode
 }
 
 export default function DashboardClientWrapper({ children }: DashboardClientWrapperProps) {
-  const { prefetchAllCanvasData } = useUniversalPrefetch()
-
-  useEffect(() => {
-    // Aggressively prefetch all Canvas data when dashboard loads
-    // This ensures instant tab switching
-    const prefetchTimeout = setTimeout(() => {
-      prefetchAllCanvasData()
-      console.log('🚀 Dashboard: Prefetching all Canvas data for instant navigation')
-    }, 100) // Small delay to not block initial render
-
-    return () => clearTimeout(prefetchTimeout)
-  }, [prefetchAllCanvasData])
-
+  // Removed automatic prefetching - data will only be fetched via manual sync button
+  // This prevents automatic API calls on every page load/tab switch
+  
   return <>{children}</>
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useCanvasData } from '@/hooks/useCanvasData'
+import { useCanvasDataCached } from '@/hooks/useCanvasDataCached'
 import { GradesLoading } from '@/components/ui/OptimizedLoading'
 import { useCourseNameMapper } from '@/utils/course-name-mapper'
 import { useCourseNameMappings } from '@/hooks/useCourseNameMappings'
@@ -28,7 +28,7 @@ const filterOptions = [
 const COLORS = ['#0374B5', '#FC5E13', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
 export default function GradesView() {
-  const { assignments, courses, grades, loading } = useCanvasData()
+  const { assignments, courses, grades, hasData } = useCanvasDataCached()
   const { mapper } = useCourseNameMapper()
   const { mappings } = useCourseNameMappings()
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,8 +122,22 @@ export default function GradesView() {
     return true
   })
 
-  if (loading && (!grades || grades.length === 0)) {
-    return <GradesLoading />
+  if (!hasData || (!grades || grades.length === 0)) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">📊</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No grades data</h3>
+          <p className="text-gray-500 mb-4">Go to the dashboard and sync your Canvas data to see your grades.</p>
+          <a 
+            href="/dashboard" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -12,7 +12,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { useAnalyticsData } from '@/hooks/useAnalyticsData'
-import { useCanvasData } from '@/hooks/useCanvasData'
+import { useCanvasDataCached } from '@/hooks/useCanvasDataCached'
 import WeeklyProductivityCard from '@/components/analytics/WeeklyProductivityCard'
 import CourseHealthGrid from '@/components/analytics/CourseHealthGrid'
 import GradeTrendsChart from '@/components/analytics/GradeTrendsChart'
@@ -40,20 +40,23 @@ export default function AnalyticsView() {
     assignments, 
     courses, 
     grades, 
-    loading: canvasLoading,
-    refetch: refetchCanvas
-  } = useCanvasData()
+    hasData,
+    syncData
+  } = useCanvasDataCached()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   const handleRefresh = async () => {
-    await Promise.all([refetchAnalytics(), refetchCanvas()])
+    await Promise.all([
+      refetchAnalytics(),
+      syncData() // Sync Canvas data if needed
+    ])
     toast.success('Analytics refreshed! 📊')
   }
 
-  const loading = analyticsLoading || canvasLoading
+  const loading = analyticsLoading // Only analytics API loading, not Canvas data
 
   if (!mounted) {
     return (
@@ -67,7 +70,7 @@ export default function AnalyticsView() {
   }
 
   // Show empty state if no Canvas data
-  if (!loading && (!assignments || assignments.length === 0)) {
+  if (!hasData || (!assignments || assignments.length === 0)) {
     return (
       <div className="py-6">
         <div className="mb-6">
@@ -75,27 +78,19 @@ export default function AnalyticsView() {
             📊 Analytics Dashboard
           </h1>
           <p className="text-warm-gray-600">
-            Insights into your academic performance and study habits
+            Insights and patterns for your peaceful learning journey.
           </p>
         </div>
-
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <div className="p-8 bg-sage-50 rounded-2xl max-w-md">
-            <BarChart3 className="h-16 w-16 text-sage-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-warm-gray-800 mb-2">
-              No Data Available Yet
-            </h3>
-            <p className="text-warm-gray-600 mb-4">
-              Connect your Canvas account and complete some assignments to see your analytics insights.
-            </p>
-            <button
-              onClick={handleRefresh}
-              className="inline-flex items-center px-4 py-2 bg-sage-500 text-white rounded-lg hover:bg-sage-600 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Data
-            </button>
-          </div>
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">📊</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No analytics data</h3>
+          <p className="text-gray-500 mb-4">Go to the dashboard and sync your Canvas data to see analytics.</p>
+          <a 
+            href="/dashboard" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Go to Dashboard
+          </a>
         </div>
       </div>
     )

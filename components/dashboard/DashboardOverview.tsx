@@ -24,13 +24,14 @@ import PullToRefresh from '@/components/ui/PullToRefresh'
 import StudyConsistencyHeatmap from '@/components/analytics/StudyConsistencyHeatmap'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useCanvasData } from '@/hooks/useCanvasData'
+import { useCanvasDataCached } from '@/hooks/useCanvasDataCached'
 import { useCanvasToken } from '@/hooks/useCanvasToken'
+import ManualSyncButton from '@/components/dashboard/ManualSyncButton'
 import toast from 'react-hot-toast'
 
 export default function DashboardOverview() {
   const { user } = useSupabase()
-  const { assignments, courses, grades, loading, refetch } = useCanvasData()
+  const { assignments, courses, grades, hasData, syncData } = useCanvasDataCached()
   const { hasToken, isLoading: tokenLoading, refetch: refetchToken } = useCanvasToken()
   const [showTokenSetup, setShowTokenSetup] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -41,13 +42,13 @@ export default function DashboardOverview() {
 
   // Handle refresh for pull-to-refresh
   const handleRefresh = async () => {
-    await refetch()
+    await syncData()
     toast.success('Dashboard refreshed! 🌿')
   }
 
   // Handle FAB actions
   const handleSyncAction = async () => {
-    await refetch()
+    await syncData()
     toast.success('Data synced successfully! ✨')
   }
 
@@ -147,8 +148,15 @@ export default function DashboardOverview() {
 
       {/* Canvas Data Manager with peaceful styling */}
       {hasToken && (
-        <div className="mb-10">
+        <div className="mb-6">
           <SyncStatusWidget />
+        </div>
+      )}
+
+      {/* Manual Sync Button - Central sync control */}
+      {hasToken && (
+        <div className="mb-8">
+          <ManualSyncButton showStats={true} />
         </div>
       )}
 
@@ -227,7 +235,7 @@ export default function DashboardOverview() {
               </a>
             </div>
           </div>
-          <div className="p-4 lg:p-6">{loading ? (
+          <div className="p-4 lg:p-6">{!hasData ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="animate-soft-pulse">

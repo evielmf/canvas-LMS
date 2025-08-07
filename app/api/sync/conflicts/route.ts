@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     let resolvedCount = 0
-    let errors: string[] = []
+    const errors: string[] = []
 
     if (action === 'resolve') {
       // For resolve action, update the cached data to match live values

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useCanvasData } from '@/hooks/useCanvasData'
+import { useCanvasDataCached } from '@/hooks/useCanvasDataCached'
 import { 
   Calendar,
   Clock, 
@@ -32,7 +32,7 @@ const filterOptions = [
 ]
 
 export default function AssignmentsView() {
-  const { assignments, courses, loading, coursesLoading, assignmentsLoading, refetch } = useCanvasData()
+  const { assignments, courses, hasData, syncData } = useCanvasDataCached()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedCourse, setSelectedCourse] = useState('')
@@ -49,7 +49,7 @@ export default function AssignmentsView() {
 
   // Mobile-specific handlers
   const handleRefresh = async () => {
-    await refetch()
+    await syncData()
     toast.success('Assignments refreshed! 📚')
   }
 
@@ -64,7 +64,7 @@ export default function AssignmentsView() {
   }
 
   const handleSyncAction = async () => {
-    await refetch()
+    await syncData()
     toast.success('Assignments synced! ✨')
   }
 
@@ -122,9 +122,23 @@ export default function AssignmentsView() {
     }).length : 0,
   }
 
-  // Show optimized loading state - only if no data is cached
-  if (loading && (!assignments || assignments.length === 0)) {
-    return <AssignmentsLoading />
+  // Show no data state if no cached data
+  if (!hasData || (!assignments || assignments.length === 0)) {
+    return (
+      <div className="py-6">
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">📚</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments data</h3>
+          <p className="text-gray-500 mb-4">Go to the dashboard and sync your Canvas data to see your assignments.</p>
+          <a 
+            href="/dashboard" 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (

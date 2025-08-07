@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Calendar, Activity, Flame, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { CanvasAssignment } from '@/hooks/useCanvasData'
+import type { CanvasAssignment } from '@/hooks/useCanvasDataCached'
 
 interface StudyConsistencyHeatmapProps {
   assignments: CanvasAssignment[]
