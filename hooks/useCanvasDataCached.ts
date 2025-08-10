@@ -40,45 +40,69 @@ export interface CanvasGrade {
   graded_at: string
 }
 
-// Cache-only hook - only reads from cache, never fetches automatically
+// Cache-only hook - reads from cache but can populate from API
 export function useCanvasDataCached() {
   const { user } = useSupabase()
   const queryClient = useQueryClient()
 
-  // Get courses from cache only
+  // Get courses from cache, populate if empty
   const coursesQuery = useQuery<{ courses: CanvasCourse[] }>({
     queryKey: ['canvas-courses', user?.id],
-    queryFn: () => {
-      // This will never run - we only read from cache
-      throw new Error('Cache-only query should not fetch')
+    queryFn: async () => {
+      console.log('🔄 Fetching courses from API...')
+      const response = await fetch('/api/canvas/courses')
+      if (!response.ok) {
+        console.error('❌ Courses API failed:', response.status, response.statusText)
+        throw new Error(`Failed to fetch courses: ${response.status}`)
+      }
+      const data = await response.json()
+      console.log('✅ Courses API response:', data)
+      return data
     },
-    enabled: false, // Never fetch automatically
-    staleTime: Infinity, // Cache never goes stale
-    gcTime: Infinity, // Cache never gets garbage collected
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
   })
 
-  // Get assignments from cache only
+  // Get assignments from cache, populate if empty
   const assignmentsQuery = useQuery<{ assignments: CanvasAssignment[] }>({
     queryKey: ['canvas-assignments', user?.id],
-    queryFn: () => {
-      // This will never run - we only read from cache
-      throw new Error('Cache-only query should not fetch')
+    queryFn: async () => {
+      console.log('🔄 Fetching assignments from API...')
+      const response = await fetch('/api/canvas/assignments')
+      if (!response.ok) {
+        console.error('❌ Assignments API failed:', response.status, response.statusText)
+        throw new Error(`Failed to fetch assignments: ${response.status}`)
+      }
+      const data = await response.json()
+      console.log('✅ Assignments API response:', data)
+      return data
     },
-    enabled: false, // Never fetch automatically
-    staleTime: Infinity, // Cache never goes stale
-    gcTime: Infinity, // Cache never gets garbage collected
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
   })
 
-  // Get grades from cache only
+  // Get grades from cache, populate if empty
   const gradesQuery = useQuery<{ grades: CanvasGrade[] }>({
     queryKey: ['canvas-grades', user?.id],
-    queryFn: () => {
-      // This will never run - we only read from cache
-      throw new Error('Cache-only query should not fetch')
+    queryFn: async () => {
+      console.log('🔄 Fetching grades from API...')
+      const response = await fetch('/api/canvas/grades')
+      if (!response.ok) {
+        console.error('❌ Grades API failed:', response.status, response.statusText)
+        throw new Error(`Failed to fetch grades: ${response.status}`)
+      }
+      const data = await response.json()
+      console.log('✅ Grades API response:', data)
+      return data
     },
-    enabled: false, // Never fetch automatically
-    staleTime: Infinity, // Cache never goes stale
-    gcTime: Infinity, // Cache never gets garbage collected
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
   })
 
   // Manual sync function that actually fetches data
@@ -128,12 +152,12 @@ export function useCanvasDataCached() {
 
   // Check if we have any cached data
   const hasData = useCallback(() => {
-    const coursesData = queryClient.getQueryData(['canvas-courses', user?.id])
-    const assignmentsData = queryClient.getQueryData(['canvas-assignments', user?.id])
-    const gradesData = queryClient.getQueryData(['canvas-grades', user?.id])
+    const courses = coursesQuery.data?.courses || []
+    const assignments = assignmentsQuery.data?.assignments || []
+    const grades = gradesQuery.data?.grades || []
     
-    return !!(coursesData || assignmentsData || gradesData)
-  }, [queryClient, user?.id])
+    return courses.length > 0 || assignments.length > 0 || grades.length > 0
+  }, [coursesQuery.data, assignmentsQuery.data, gradesQuery.data])
 
   return {
     // Data from cache only
@@ -141,11 +165,11 @@ export function useCanvasDataCached() {
     assignments: assignmentsQuery.data?.assignments || [],
     grades: gradesQuery.data?.grades || [],
     
-    // Loading states (always false since we don't auto-fetch)
-    loading: false,
-    coursesLoading: false,
-    assignmentsLoading: false,
-    gradesLoading: false,
+    // Loading states
+    loading: coursesQuery.isLoading || assignmentsQuery.isLoading || gradesQuery.isLoading,
+    coursesLoading: coursesQuery.isLoading,
+    assignmentsLoading: assignmentsQuery.isLoading,
+    gradesLoading: gradesQuery.isLoading,
     
     // Error states
     error: coursesQuery.error || assignmentsQuery.error || gradesQuery.error,

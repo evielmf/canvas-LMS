@@ -118,13 +118,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Clear old course cache
-    await supabase
-      .from('canvas_courses_cache')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Insert new courses
+    // Insert or update courses using upsert
     if (courses.length > 0) {
       const coursesToInsert = courses.map((course: any) => ({
         user_id: user.id,
@@ -139,7 +133,9 @@ export async function POST(request: NextRequest) {
 
       const { error: coursesInsertError } = await supabase
         .from('canvas_courses_cache')
-        .insert(coursesToInsert)
+        .upsert(coursesToInsert, {
+          onConflict: 'user_id,canvas_course_id'
+        })
 
       if (coursesInsertError) {
         console.error('Error inserting courses:', coursesInsertError)
@@ -217,13 +213,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Clear old assignment cache
-    await supabase
-      .from('canvas_assignments_cache')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Insert new assignments
+    // Insert or update assignments using upsert
     if (allAssignments.length > 0) {
       const assignmentsToInsert = allAssignments.map((assignment: any) => ({
         user_id: user.id,
@@ -246,7 +236,9 @@ export async function POST(request: NextRequest) {
 
       const { error: assignmentsInsertError } = await supabase
         .from('canvas_assignments_cache')
-        .insert(assignmentsToInsert)
+        .upsert(assignmentsToInsert, {
+          onConflict: 'user_id,canvas_assignment_id'
+        })
 
       if (assignmentsInsertError) {
         console.error('Error inserting assignments:', assignmentsInsertError)

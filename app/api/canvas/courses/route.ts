@@ -28,13 +28,14 @@ export async function GET(request: NextRequest) {
 
     // Transform cache data to match frontend expectations
     const courses = coursesData?.map(course => ({
-      id: course.course_id,
+      id: course.canvas_course_id.toString(),
       name: course.name,
       course_code: course.course_code,
       start_at: course.start_at,
       end_at: course.end_at,
       workflow_state: course.workflow_state,
-      ...course.raw_data // Include any additional Canvas data
+      enrollment_term_id: course.enrollment_term_id,
+      course_color: course.course_color
     })) || []
 
     console.log(`Successfully fetched ${courses.length} courses from cache`)

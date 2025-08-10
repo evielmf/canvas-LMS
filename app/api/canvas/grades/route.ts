@@ -13,11 +13,19 @@ export async function GET(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient()
     
-    // Fetch cached assignments data from Supabase
+    // Get user from session
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('User authentication failed:', userError)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Fetch cached assignments data from Supabase for this user
     const { data: assignmentsData, error } = await supabase
       .from('canvas_assignments_cache')
       .select('*')
-      .order('synced_at', { ascending: false })
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(parseInt(limit))
     
     if (error) {
@@ -28,20 +36,70 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Transform cached assignment data to grades format
-    const grades = assignmentsData?.map((assignment: any) => ({
-      id: `${assignment.canvas_assignment_id}_grade`,
-      score: assignment.score || 0,
-      points_possible: assignment.points_possible || 0,
-      assignment_name: assignment.name || 'Unknown Assignment',
-      course_name: assignment.course_name || 'Unknown Course',
-      course_id: assignment.course_id,
-      graded_at: assignment.submitted_at || assignment.synced_at,
-      assignment_id: assignment.canvas_assignment_id,
-      percentage: assignment.points_possible > 0 
-        ? Math.round((assignment.score / assignment.points_possible) * 100) 
-        : 0
-    })) || []
+    // Get courses from cache for proper course name enrichment
+    const { data: coursesData } = await supabase
+      .from('canvas_courses_cache')
+      .select('*')
+      .eq('user_id', user.id)
+
+    // Create course mapping with both string and number keys for better matching
+    const coursesMap = new Map()
+    coursesData?.forEach(course => {
+      // Add both string and number versions of the course ID
+      coursesMap.set(course.canvas_course_id, course)
+      coursesMap.set(course.canvas_course_id.toString(), course)
+      coursesMap.set(parseInt(course.canvas_course_id), course)
+    })
+    
+    // Debug logging
+    console.log(`Found ${coursesData?.length || 0} courses in cache`)
+    if (coursesData && coursesData.length > 0) {
+      console.log('Available courses:', coursesData.map(c => `ID: ${c.canvas_course_id}, Name: "${c.name}"`).join(', '))
+    }
+
+    // Transform cached assignment data to grades format with proper course names
+    const grades = assignmentsData?.filter(assignment => assignment.score != null)
+      .map((assignment: any) => {
+        // Try multiple course ID formats for matching
+        let course = coursesMap.get(assignment.course_id) || 
+                    coursesMap.get(assignment.course_id?.toString()) || 
+                    coursesMap.get(parseInt(assignment.course_id))
+        
+        let courseName = 'Unknown Course'
+        
+        if (course && course.name) {
+          courseName = course.name
+        } else if (course && course.course_code) {
+          courseName = course.course_code
+        } else if (course) {
+          courseName = `Course ${assignment.course_id}`
+        } else {
+          console.log(`❌ No course found for assignment "${assignment.name}" with course_id: ${assignment.course_id} (type: ${typeof assignment.course_id})`)
+          // List available course IDs for debugging
+          const availableIds = Array.from(coursesMap.keys()).filter((key, index, array) => array.indexOf(key) === index)
+          console.log(`Available course IDs in cache: [${availableIds.join(', ')}]`)
+          courseName = `Course ${assignment.course_id}` // Fallback
+        }
+        
+        // Additional debug for successful matches
+        if (course) {
+          console.log(`✅ Matched assignment "${assignment.name}" with course "${courseName}"`)
+        }
+        
+        return {
+          id: `${assignment.canvas_assignment_id}_grade`,
+          score: assignment.score || 0,
+          points_possible: assignment.points_possible || 0,
+          assignment_name: assignment.name || 'Unknown Assignment',
+          course_name: courseName,
+          course_id: assignment.course_id,
+          graded_at: assignment.submitted_at || assignment.created_at,
+          assignment_id: assignment.canvas_assignment_id,
+          percentage: assignment.points_possible > 0 
+            ? Math.round((assignment.score / assignment.points_possible) * 100) 
+            : 0
+        }
+      }) || []
 
     const totalTime = performance.now() - startTime
     console.log(`Successfully fetched ${grades.length} grades from cache in ${totalTime.toFixed(2)}ms`)

@@ -32,30 +32,34 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('user_id', user.id)
 
-    const coursesMap = new Map(coursesData?.map(course => [course.course_id, course]) || [])
+    const coursesMap = new Map(coursesData?.map(course => [course.canvas_course_id, course]) || [])
 
     // Transform cache data to match frontend expectations
     const assignments = assignmentsData?.map(assignment => ({
-      id: assignment.assignment_id,
+      id: assignment.canvas_assignment_id.toString(),
       name: assignment.name,
       description: assignment.description,
       due_at: assignment.due_at,
       points_possible: assignment.points_possible,
-      course_id: assignment.course_id,
+      course_id: assignment.course_id.toString(),
       submission_types: assignment.submission_types,
       html_url: assignment.html_url,
       course: coursesMap.get(assignment.course_id) ? {
-        id: assignment.course_id,
-        name: assignment.course_name,
-        course_code: assignment.course_code
+        id: assignment.course_id.toString(),
+        name: coursesMap.get(assignment.course_id)?.name,
+        course_code: coursesMap.get(assignment.course_id)?.course_code
       } : null,
       submission: assignment.has_submission ? {
-        id: `${assignment.assignment_id}_submission`,
-        score: assignment.submission_score,
-        submitted_at: assignment.submission_submitted_at,
-        workflow_state: assignment.submission_workflow_state
+        id: `${assignment.canvas_assignment_id}_submission`,
+        score: assignment.score,
+        submitted_at: assignment.submitted_at,
+        workflow_state: assignment.workflow_state
       } : null,
-      ...assignment.raw_data // Include any additional Canvas data
+      has_submission: assignment.has_submission,
+      workflow_state: assignment.workflow_state,
+      assignment_group_id: assignment.assignment_group_id,
+      created_at_canvas: assignment.created_at_canvas,
+      updated_at_canvas: assignment.updated_at_canvas
     })) || []
 
     console.log(`Successfully fetched ${assignments.length} assignments from cache`)

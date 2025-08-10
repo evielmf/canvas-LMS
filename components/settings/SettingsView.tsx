@@ -13,12 +13,173 @@ import {
   EyeOff,
   ExternalLink,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Database,
+  BookOpen
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import crypto from 'crypto'
 import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
 import CourseNameMappingManager from '@/components/settings/CourseNameMappingManager'
+
+// Course Name Fix Tool Component
+function CourseNameFixTool() {
+  const [fixStatus, setFixStatus] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(false)
+  
+  const checkNeedsFix = async () => {
+    setChecking(true)
+    try {
+      const response = await fetch('/api/canvas/fix-course-names')
+      const data = await response.json()
+      setFixStatus(data)
+    } catch (error) {
+      toast.error('Failed to check course names')
+      console.error(error)
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const fixCourseNames = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/canvas/fix-course-names', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success(data.message)
+        await checkNeedsFix() // Refresh status
+      } else {
+        toast.error(data.error || 'Failed to fix course names')
+      }
+    } catch (error) {
+      toast.error('Failed to fix course names')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkNeedsFix()
+  }, [])
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border">
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Course Name Repair Tool</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Fix assignments that show "Unknown Course" instead of proper course names.
+            </p>
+          </div>
+          <BookOpen className="w-6 h-6 text-blue-500" />
+        </div>
+      </div>
+      
+      <div className="p-6">
+        {checking ? (
+          <div className="flex items-center space-x-3">
+            <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
+            <span className="text-sm text-gray-600">Checking course names...</span>
+          </div>
+        ) : fixStatus ? (
+          <div className="space-y-4">
+            {fixStatus.needsFix ? (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-orange-800">
+                      Found {fixStatus.unknownCount} assignments with unknown course names
+                    </h3>
+                    <p className="text-sm text-orange-700 mt-1">
+                      These assignments are showing "Unknown Course" instead of proper course names.
+                    </p>
+                    
+                    {fixStatus.examples && fixStatus.examples.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-orange-800 mb-2">Examples:</p>
+                        <ul className="text-xs text-orange-700 space-y-1">
+                          {fixStatus.examples.map((example: any, index: number) => (
+                            <li key={index} className="flex items-center space-x-2">
+                              <span className="w-1 h-1 bg-orange-400 rounded-full"></span>
+                              <span>"{example.name}" (Course ID: {example.courseId})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex space-x-3">
+                  <button
+                    onClick={fixCourseNames}
+                    disabled={loading}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium transition-colors"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Fixing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Settings className="w-4 h-4" />
+                        <span>Fix Course Names</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={checkNeedsFix}
+                    disabled={checking}
+                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium transition-colors"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`} />
+                    <span>Recheck</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-green-800">
+                      All course names are properly set
+                    </h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      No assignments found with unknown course names.
+                    </p>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={checkNeedsFix}
+                  disabled={checking}
+                  className="mt-3 bg-green-100 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-200 transition-colors"
+                >
+                  Recheck
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500">Loading...</div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface CanvasToken {
   canvas_url: string
@@ -353,6 +514,7 @@ export default function SettingsView() {
 
   const tabs = [
     { id: 'canvas', label: 'Canvas Integration', icon: Settings },
+    { id: 'data', label: 'Data Management', icon: Database },
     { id: 'account', label: 'Account', icon: User },
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
   ]
@@ -596,6 +758,39 @@ export default function SettingsView() {
                     <li>Enter a purpose (e.g., "Student Dashboard")</li>
                     <li>Copy the generated token and paste it above</li>
                   </ol>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'data' && (
+            <div className="space-y-6">
+              {/* Course Name Mapping */}
+              <div className="bg-white rounded-lg shadow-sm border">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">Course Name Mapping</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Manage how course names are displayed throughout the application.
+                  </p>
+                </div>
+                <div className="p-6">
+                  <CourseNameMappingManager />
+                </div>
+              </div>
+
+              {/* Course Name Fix Tool */}
+              <CourseNameFixTool />
+
+              {/* Canvas Data Management */}
+              <div className="bg-white rounded-lg shadow-sm border">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">Canvas Data Management</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Sync and manage your Canvas data cache.
+                  </p>
+                </div>
+                <div className="p-6">
+                  <CanvasDataManager />
                 </div>
               </div>
             </div>

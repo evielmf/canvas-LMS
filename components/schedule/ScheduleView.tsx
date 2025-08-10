@@ -68,12 +68,89 @@ export default function ScheduleView() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null)
+  const [viewMode, setViewMode] = useState<'weekly' | 'list' | 'grid'>('weekly')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
-  const [showFilters, setShowFilters] = useState(false)
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+
+  // Load schedule items on component mount
+  useEffect(() => {
+    fetchScheduleItems()
+  }, [])
+
+  const fetchScheduleItems = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/schedule')
+      if (response.ok) {
+        const data = await response.json()
+        setScheduleItems(data.scheduleItems || [])
+      } else {
+        console.error('Failed to fetch schedule items')
+        toast.error('Failed to load schedule')
+      }
+    } catch (error) {
+      console.error('Error fetching schedule:', error)
+      toast.error('Failed to load schedule')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveScheduleItem = async (itemData: Partial<ScheduleItem>) => {
+    try {
+      const isEditing = !!editingItem
+      const url = '/api/schedule'
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      const body = isEditing 
+        ? { ...itemData, id: editingItem.id }
+        : itemData
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(isEditing ? 'Schedule updated!' : 'Class added!')
+        await fetchScheduleItems() // Refresh the list
+        return true
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to save schedule item')
+        return false
+      }
+    } catch (error) {
+      console.error('Error saving schedule item:', error)
+      toast.error('Failed to save schedule item')
+      return false
+    }
+  }
+
+  const deleteScheduleItem = async (id: string) => {
+    try {
+      const response = await fetch(`/api/schedule?id=${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success('Class removed!')
+        await fetchScheduleItems() // Refresh the list
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to delete schedule item')
+      }
+    } catch (error) {
+      console.error('Error deleting schedule item:', error)
+      toast.error('Failed to delete schedule item')
+    }
+  }
+  const [showFilters, setShowFilters] = useState(false)
 
   // Check screen size
   useEffect(() => {
@@ -89,24 +166,8 @@ export default function ScheduleView() {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
-  const loadSchedule = async () => {
-    try {
-      // Mock data for now - replace with actual Supabase call
-      setScheduleItems([])
-    } catch (error) {
-      console.error('Error loading schedule:', error)
-      toast.error('Failed to load schedule')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadSchedule()
-  }, [])
-
   const handleRefresh = async () => {
-    await loadSchedule()
+    await fetchScheduleItems()
   }
 
   const isToday = (dayIndex: number) => {
@@ -130,16 +191,6 @@ export default function ScheduleView() {
 
   const getItemsForDay = (dayIndex: number) => {
     return scheduleItems.filter(item => item.day_of_week === dayIndex)
-  }
-
-  const deleteScheduleItem = async (id: string) => {
-    try {
-      setScheduleItems(prev => prev.filter(item => item.id !== id))
-      toast.success('Schedule item deleted')
-    } catch (error) {
-      console.error('Error deleting schedule item:', error)
-      toast.error('Failed to delete schedule item')
-    }
   }
 
   const getWeekDates = () => {
@@ -491,11 +542,11 @@ export default function ScheduleView() {
               setEditingItem(null)
             }}
             onSave={async (data) => {
-              // Mock save - replace with actual implementation
-              console.log('Save data:', data)
-              toast.success(editingItem ? 'Schedule item updated!' : 'Schedule item added!')
-              setShowAddForm(false)
-              setEditingItem(null)
+              const success = await saveScheduleItem(data)
+              if (success) {
+                setShowAddForm(false)
+                setEditingItem(null)
+              }
             }}
           />
         )}
