@@ -7,9 +7,10 @@ import { createClient } from '@/utils/supabase/api'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { supabase } = createClient(request)
+  const { id } = await params
   
   try {
     // Get user from session
@@ -18,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const conflictId = params.id
+    const conflictId = id
     if (!conflictId) {
       return NextResponse.json({ error: 'Conflict ID is required' }, { status: 400 })
     }
