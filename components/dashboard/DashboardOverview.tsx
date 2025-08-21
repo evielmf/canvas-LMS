@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import CanvasTokenSetup from '@/components/dashboard/CanvasTokenSetup'
 import CanvasDataManager from '@/components/dashboard/CanvasDataManager'
+import CanvasHealthChecker from '@/components/dashboard/CanvasHealthChecker'
 import AssignmentCard from '@/components/dashboard/AssignmentCard'
 import MobileAssignmentCard from '@/components/dashboard/MobileAssignmentCard'
 import GradeChart from '@/components/dashboard/GradeChart'
@@ -146,6 +147,16 @@ export default function DashboardOverview() {
         </div>
       )}
 
+      {/* Canvas Health Checker - Always show when token exists */}
+      {hasToken && (
+        <div className="mb-6">
+          <CanvasHealthChecker 
+            onTokenInvalid={() => setShowTokenSetup(true)}
+            onSyncNeeded={handleSyncAction}
+          />
+        </div>
+      )}
+
       {/* Canvas Data Manager with peaceful styling */}
       {hasToken && (
         <div className="mb-6">
@@ -153,10 +164,10 @@ export default function DashboardOverview() {
         </div>
       )}
 
-      {/* Manual Sync Button - Central sync control */}
+      {/* Manual Sync Button - Enhanced version with full sync capabilities */}
       {hasToken && (
         <div className="mb-8">
-          <ManualSyncButton showStats={true} />
+          <ManualSyncButton variant="card" showStats={true} />
         </div>
       )}
 

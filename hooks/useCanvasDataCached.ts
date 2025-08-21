@@ -105,7 +105,7 @@ export function useCanvasDataCached() {
     retry: 2,
   })
 
-  // Manual sync function that actually fetches data
+  // Manual sync function that actually fetches data with enhanced error handling
   const syncData = useCallback(async (): Promise<{
     courses: CanvasCourse[]
     assignments: CanvasAssignment[]
@@ -116,15 +116,51 @@ export function useCanvasDataCached() {
     console.log('🔄 Manual sync triggered - fetching fresh Canvas data...')
     
     try {
-      // Fetch all data in parallel
+      // First validate the Canvas token
+      const tokenValidation = await fetch('/api/canvas/validate-token', {
+        method: 'POST'
+      })
+      
+      if (!tokenValidation.ok) {
+        const error = await tokenValidation.json()
+        if (error.needsReauth || error.needsSetup) {
+          throw new Error('Canvas token invalid - authentication required')
+        }
+        throw new Error(error.details || 'Token validation failed')
+      }
+      
+      console.log('✅ Canvas token validated successfully')
+      
+      // Fetch all data in parallel with timeout
+      const fetchWithTimeout = (url: string, timeout = 30000) => {
+        return Promise.race([
+          fetch(url),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout)
+          )
+        ])
+      }
+      
       const [coursesRes, assignmentsRes, gradesRes] = await Promise.all([
-        fetch('/api/canvas/courses'),
-        fetch('/api/canvas/assignments'),
-        fetch('/api/canvas/grades')
+        fetchWithTimeout('/api/canvas/courses'),
+        fetchWithTimeout('/api/canvas/assignments'),
+        fetchWithTimeout('/api/canvas/grades')
       ])
 
-      if (!coursesRes.ok || !assignmentsRes.ok || !gradesRes.ok) {
-        throw new Error('Failed to fetch Canvas data')
+      // Check responses
+      if (!coursesRes.ok) {
+        const errorData = await coursesRes.json().catch(() => ({}))
+        throw new Error(`Failed to fetch courses: ${errorData.details || coursesRes.statusText}`)
+      }
+      
+      if (!assignmentsRes.ok) {
+        const errorData = await assignmentsRes.json().catch(() => ({}))
+        throw new Error(`Failed to fetch assignments: ${errorData.details || assignmentsRes.statusText}`)
+      }
+      
+      if (!gradesRes.ok) {
+        const errorData = await gradesRes.json().catch(() => ({}))
+        throw new Error(`Failed to fetch grades: ${errorData.details || gradesRes.statusText}`)
       }
 
       const [coursesData, assignmentsData, gradesData] = await Promise.all([
@@ -133,20 +169,38 @@ export function useCanvasDataCached() {
         gradesRes.json()
       ])
 
-      // Update cache with fresh data
-      queryClient.setQueryData(['canvas-courses', user.id], coursesData)
-      queryClient.setQueryData(['canvas-assignments', user.id], assignmentsData)
-      queryClient.setQueryData(['canvas-grades', user.id], gradesData)
+      // Validate data structure
+      const courses = Array.isArray(coursesData.courses) ? coursesData.courses : []
+      const assignments = Array.isArray(assignmentsData.assignments) ? assignmentsData.assignments : []
+      const grades = Array.isArray(gradesData.grades) ? gradesData.grades : []
 
-      console.log('✅ Manual sync completed - cache updated')
-      return {
-        courses: coursesData.courses || [],
-        assignments: assignmentsData.assignments || [],
-        grades: gradesData.grades || []
-      }
-    } catch (error) {
+      // Update cache with fresh data
+      queryClient.setQueryData(['canvas-courses', user.id], { courses })
+      queryClient.setQueryData(['canvas-assignments', user.id], { assignments })
+      queryClient.setQueryData(['canvas-grades', user.id], { grades })
+
+      console.log(`✅ Manual sync completed - cache updated with ${courses.length} courses, ${assignments.length} assignments, ${grades.length} grades`)
+      
+      return { courses, assignments, grades }
+    } catch (error: any) {
       console.error('❌ Manual sync failed:', error)
-      throw error
+      
+      // Provide user-friendly error messages
+      let userMessage = 'Failed to sync Canvas data'
+      
+      if (error.message.includes('timeout')) {
+        userMessage = 'Sync timed out - Canvas might be slow. Please try again.'
+      } else if (error.message.includes('authentication') || error.message.includes('token')) {
+        userMessage = 'Canvas authentication failed. Please check your Canvas token.'
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        userMessage = 'Network error - please check your connection and try again.'
+      }
+      
+      // Create error with user-friendly message
+      const enhancedError = new Error(userMessage)
+      ;(enhancedError as any).originalError = error
+      
+      throw enhancedError
     }
   }, [user, queryClient])
 
