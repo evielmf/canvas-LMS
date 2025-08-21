@@ -29,10 +29,25 @@ export default function DashboardNav({ user }: DashboardNavProps) {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut()
+      // Clear any local storage data
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Sign out error:', error)
+        toast.error('Error signing out')
+        return
+      }
+      
       toast.success('Signed out successfully')
-      router.push('/')
+      
+      // Force redirect to home page
+      window.location.href = '/'
     } catch (error) {
+      console.error('Sign out error:', error)
       toast.error('Error signing out')
     }
   }
