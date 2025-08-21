@@ -41,7 +41,7 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
       if (!response.ok) {
         console.error('❌ Canvas connection test failed:', data)
         
-        // Show detailed error message based on response
+        // Enhanced error handling with troubleshooting
         let errorMessage = 'Invalid Canvas URL or token. Please check your credentials.'
         
         if (data.details) {
@@ -50,14 +50,29 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
           errorMessage = data.error
         }
         
-        // Add helpful hints for common errors
-        if (response.status === 401) {
-          errorMessage += '\n\nHint: Make sure your API token is valid and has not expired.'
-        } else if (response.status === 404) {
-          errorMessage += '\n\nHint: Check that your Canvas URL is correct (e.g., https://yourschool.instructure.com)'
+        // Add troubleshooting steps if available
+        let troubleshootingMessage = ''
+        if (data.troubleshooting && Array.isArray(data.troubleshooting)) {
+          troubleshootingMessage = '\n\nTroubleshooting steps:\n' + 
+            data.troubleshooting.map((step: string, index: number) => `${index + 1}. ${step}`).join('\n')
         }
         
-        toast.error(errorMessage, { duration: 8000 })
+        // Add helpful hints for common errors
+        if (response.status === 401) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Make sure your API token is valid and has not expired\n2. Verify you copied the token correctly (no extra spaces)\n3. Try generating a new token from Canvas settings'
+          }
+        } else if (response.status === 404) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Check that your Canvas URL is correct\n2. Ensure the URL format is: https://yourschool.instructure.com\n3. Try accessing Canvas in your browser first'
+          }
+        } else if (response.status >= 500) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Canvas servers may be temporarily down\n2. Try again in a few minutes\n3. Check if Canvas is accessible in your browser'
+          }
+        }
+        
+        toast.error(errorMessage + troubleshootingMessage, { duration: 12000 })
         return false
       }
 
@@ -155,14 +170,29 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
           errorMessage = data.error
         }
         
-        // Add helpful hints for common errors
-        if (response.status === 401) {
-          errorMessage += '\n\nHint: Make sure your API token is valid and has not expired.'
-        } else if (response.status === 404) {
-          errorMessage += '\n\nHint: Check that your Canvas URL is correct (e.g., https://yourschool.instructure.com)'
+        // Add troubleshooting steps if available
+        let troubleshootingMessage = ''
+        if (data.troubleshooting && Array.isArray(data.troubleshooting)) {
+          troubleshootingMessage = '\n\nTroubleshooting steps:\n' + 
+            data.troubleshooting.map((step: string, index: number) => `${index + 1}. ${step}`).join('\n')
         }
         
-        toast.error(errorMessage, { duration: 8000 })
+        // Add helpful hints for common errors
+        if (response.status === 401) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Make sure your API token is valid and has not expired\n2. Verify you copied the token correctly\n3. Try generating a new token from Canvas settings'
+          }
+        } else if (response.status === 404) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Check that your Canvas URL is correct\n2. Format should be: https://yourschool.instructure.com\n3. Try accessing Canvas in your browser first'
+          }
+        } else if (response.status >= 500) {
+          if (!troubleshootingMessage) {
+            troubleshootingMessage = '\n\nTroubleshooting steps:\n1. Canvas may be temporarily down\n2. Try again in a few minutes\n3. Check Canvas status in your browser'
+          }
+        }
+        
+        toast.error(errorMessage + troubleshootingMessage, { duration: 12000 })
         return
       }
 
@@ -237,14 +267,15 @@ export default function CanvasTokenSetup({ onComplete }: CanvasTokenSetupProps) 
             type="url"
             value={canvasUrl}
             onChange={(e) => setCanvasUrl(e.target.value)}
-            placeholder="https://yourschool.instructure.com"
-            pattern="https://.*\.instructure\.com/?.*"
-            title="Please enter a valid Canvas URL (e.g., https://yourschool.instructure.com)"
+            placeholder="https://yourschool.instructure.com or https://canvas.yourschool.edu"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-canvas-blue focus:border-transparent text-gray-900 placeholder-gray-500"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            Your institution's Canvas URL (without /login or other paths)
+            Your institution's Canvas URL. Common formats:
+            <br />• https://yourschool.instructure.com
+            <br />• https://canvas.yourschool.edu
+            <br />• https://yourschool.canvas.com
           </p>
         </div>
 
