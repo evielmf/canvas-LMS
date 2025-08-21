@@ -32,7 +32,7 @@ const filterOptions = [
 ]
 
 export default function AssignmentsView() {
-  const { assignments, courses, hasData, syncData } = useCanvasDataCached()
+  const { assignments, courses, hasAssignmentsData, assignmentsLoading, syncData } = useCanvasDataCached()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [selectedCourse, setSelectedCourse] = useState('')
@@ -122,20 +122,46 @@ export default function AssignmentsView() {
     }).length : 0,
   }
 
-  // Show no data state if no cached data
-  if (!hasData || (!assignments || assignments.length === 0)) {
+  // Show loading state while fetching
+  if (assignmentsLoading) {
+    return (
+      <div className="py-6">
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-sage-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading assignments...</h3>
+          <p className="text-gray-500">Fetching your Canvas assignments</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show no data state only if specifically no assignments data and not loading
+  if (!assignments || assignments.length === 0) {
     return (
       <div className="py-6">
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📚</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments data</h3>
-          <p className="text-gray-500 mb-4">Go to the dashboard and sync your Canvas data to see your assignments.</p>
-          <a 
-            href="/dashboard" 
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Go to Dashboard
-          </a>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
+          <p className="text-gray-500 mb-4">
+            {hasAssignmentsData ? 
+              'You currently have no assignments. Check back later or sync your Canvas data.' :
+              'Sync your Canvas data to see your assignments.'
+            }
+          </p>
+          <div className="space-x-3">
+            <button
+              onClick={handleSyncAction}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sage-600 hover:bg-sage-700"
+            >
+              Sync Canvas Data
+            </button>
+            <a 
+              href="/dashboard" 
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Go to Dashboard
+            </a>
+          </div>
         </div>
       </div>
     )

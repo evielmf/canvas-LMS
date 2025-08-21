@@ -60,9 +60,11 @@ export function useCanvasDataCached() {
       return data
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour cache time
     retry: 2,
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Don't refetch on component mount if we have data
   })
 
   // Get assignments from cache, populate if empty
@@ -80,9 +82,11 @@ export function useCanvasDataCached() {
       return data
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour cache time
     retry: 2,
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Don't refetch on component mount if we have data
   })
 
   // Get grades from cache, populate if empty
@@ -100,9 +104,11 @@ export function useCanvasDataCached() {
       return data
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour cache time
     retry: 2,
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Don't refetch on component mount if we have data
   })
 
   // Manual sync function that actually fetches data with enhanced error handling
@@ -213,6 +219,22 @@ export function useCanvasDataCached() {
     return courses.length > 0 || assignments.length > 0 || grades.length > 0
   }, [coursesQuery.data, assignmentsQuery.data, gradesQuery.data])
 
+  // Check specific data availability
+  const hasCoursesData = useCallback(() => {
+    const courses = coursesQuery.data?.courses || []
+    return courses.length > 0
+  }, [coursesQuery.data])
+
+  const hasAssignmentsData = useCallback(() => {
+    const assignments = assignmentsQuery.data?.assignments || []
+    return assignments.length > 0
+  }, [assignmentsQuery.data])
+
+  const hasGradesData = useCallback(() => {
+    const grades = gradesQuery.data?.grades || []
+    return grades.length > 0
+  }, [gradesQuery.data])
+
   return {
     // Data from cache only
     courses: coursesQuery.data?.courses || [],
@@ -233,6 +255,9 @@ export function useCanvasDataCached() {
     
     // Utility functions
     hasData: hasData(),
+    hasCoursesData: hasCoursesData(),
+    hasAssignmentsData: hasAssignmentsData(), 
+    hasGradesData: hasGradesData(),
     
     // Legacy refetch for compatibility (maps to syncData)
     refetch: syncData

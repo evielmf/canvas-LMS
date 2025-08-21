@@ -28,7 +28,7 @@ const filterOptions = [
 const COLORS = ['#0374B5', '#FC5E13', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
 export default function GradesView() {
-  const { assignments, courses, grades, hasData } = useCanvasDataCached()
+  const { assignments, courses, grades, hasGradesData, gradesLoading } = useCanvasDataCached()
   const { mapper } = useCourseNameMapper()
   const { mappings } = useCourseNameMappings()
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,19 +122,49 @@ export default function GradesView() {
     return true
   })
 
-  if (!hasData || (!grades || grades.length === 0)) {
+  // Show loading state while fetching
+  if (gradesLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-sage-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading grades...</h3>
+          <p className="text-gray-500">Fetching your Canvas grades</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show no data state only if specifically no grades data and not loading
+  if (!grades || grades.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">📊</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No grades data</h3>
-          <p className="text-gray-500 mb-4">Go to the dashboard and sync your Canvas data to see your grades.</p>
-          <a 
-            href="/dashboard" 
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Go to Dashboard
-          </a>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No grades found</h3>
+          <p className="text-gray-500 mb-4">
+            {hasGradesData ? 
+              'You currently have no grades. Check back later or sync your Canvas data.' :
+              'Sync your Canvas data to see your grades.'
+            }
+          </p>
+          <div className="space-x-3">
+            <button
+              onClick={async () => {
+                // Add sync functionality here if needed
+                window.location.href = '/dashboard'
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sage-600 hover:bg-sage-700"
+            >
+              Sync Canvas Data
+            </button>
+            <a 
+              href="/dashboard" 
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Go to Dashboard
+            </a>
+          </div>
         </div>
       </div>
     )

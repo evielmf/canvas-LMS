@@ -4,6 +4,7 @@ import { Providers } from './providers'
 import { Toaster } from 'react-hot-toast'
 import { Metadata, Viewport } from 'next'
 import { ChunkErrorBoundary } from '@/components/ui/ChunkErrorBoundary'
+import CanvasDataDebug from '@/components/debug/CanvasDataDebug'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -48,6 +49,7 @@ export default function RootLayout({
         <ChunkErrorBoundary>
           <Providers>
             {children}
+            <CanvasDataDebug />
             <Toaster 
               position="top-right"
               toastOptions={{
