@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const grades = assignmentsData?.filter(assignment => assignment.score != null)
       .map((assignment: any) => {
         // Try multiple course ID formats for matching
-        let course = coursesMap.get(assignment.course_id) || 
+        const course = coursesMap.get(assignment.course_id) || 
                     coursesMap.get(assignment.course_id?.toString()) || 
                     coursesMap.get(parseInt(assignment.course_id))
         
