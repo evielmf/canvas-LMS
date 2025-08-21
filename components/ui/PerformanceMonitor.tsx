@@ -17,7 +17,7 @@ export default function PerformanceMonitor() {
 
   useEffect(() => {
     if (!loading && (courses.length > 0 || assignments.length > 0 || grades.length > 0)) {
-      const performanceEntries = performance.getEntriesByType('navigation')
+      const performanceEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
       const loadTime = performanceEntries.length > 0 ? performanceEntries[0].loadEventEnd - performanceEntries[0].loadEventStart : 0
       
       const newMetric: PerformanceMetrics = {

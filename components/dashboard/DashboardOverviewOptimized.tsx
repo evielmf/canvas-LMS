@@ -90,7 +90,7 @@ export default function DashboardOverviewOptimized() {
     // Preload critical data on mount
     if (user && hasToken) {
       console.log('🚀 Dashboard mounted - preloading data...')
-      preloadData('assignments')
+      preloadData()
       
       // Background refresh stale data
       setTimeout(() => {
